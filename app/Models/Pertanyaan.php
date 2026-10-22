@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Tag;
 
 class Pertanyaan extends Model
 {
@@ -32,5 +33,16 @@ class Pertanyaan extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    //relasi tag
+    public function tags()
+    {
+        return $this->belongsToMany(
+            Tag::class,
+            'pertanyaan_tag',
+            'pertanyaan_id',
+            'tag_id'
+        );
     }
 }

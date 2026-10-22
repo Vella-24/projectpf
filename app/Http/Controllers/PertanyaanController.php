@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Kategori;
 use App\Models\Pertanyaan;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 
 class PertanyaanController extends Controller
@@ -28,9 +29,13 @@ class PertanyaanController extends Controller
         // Pencarian kata kunci pada judul pertanyaan atau jawaban
         if ($request->filled('q')) {
             $searchTerm = $request->q;
+
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
-                  ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%");
+                ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
+                ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
+                    $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
+                });
             });
         }
 
@@ -59,6 +64,8 @@ class PertanyaanController extends Controller
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
             'status' => 'required|in:draft,menunggu_validasi,disetujui,ditolak',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:100',
         ], [
             'kategori_id.required' => 'Kategori pertanyaan wajib dipilih.',
             'kategori_id.exists' => 'Kategori yang dipilih tidak valid.',
@@ -67,10 +74,30 @@ class PertanyaanController extends Controller
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
 
+        $daftarTag = $validated['tags'] ?? []; //ambil daftar kata kunci
+        unset($validated['tags']);
+
         // Pada Alpha version, default user_id menggunakan akun data entry (ID 1)
         $validated['user_id'] = 1;
 
-        Pertanyaan::create($validated);
+        $pertanyaan = Pertanyaan::create($validated);
+
+        $idTags = [];
+
+        foreach ($daftarTag as $namaTag) {
+            $namaTag = strtolower(trim($namaTag));
+
+                if ($namaTag === '') {
+                    continue;
+                }
+
+            $tag = Tag::firstOrCreate([
+                'nama_tag' => $namaTag,
+            ]);
+
+            $idTags[] = $tag->id;
+        }
+        $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
 
         return redirect()->route('pertanyaan.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
     }
@@ -91,6 +118,8 @@ class PertanyaanController extends Controller
     {
         $pertanyaan = Pertanyaan::findOrFail($id);
         $kategoris = Kategori::orderBy('nama_kategori')->get();
+        $pertanyaan->load('tags');
+
 
         return view('pertanyaan.edit', compact('pertanyaan', 'kategoris'));
     }
@@ -107,6 +136,8 @@ class PertanyaanController extends Controller
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
             'status' => 'required|in:draft,menunggu_validasi,disetujui,ditolak',
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:100',
         ], [
             'kategori_id.required' => 'Kategori pertanyaan wajib dipilih.',
             'kategori_id.exists' => 'Kategori yang dipilih tidak valid.',
@@ -115,7 +146,28 @@ class PertanyaanController extends Controller
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
 
+        $daftarTag = $validated['tags'] ?? [];
+        unset($validated['tags']);
+
         $pertanyaan->update($validated);
+
+        $idTags = [];
+
+        foreach ($daftarTag as $namaTag) {
+            $namaTag = trim($namaTag);
+
+            if ($namaTag === '') {
+                continue;
+            }
+
+            $tag = Tag::firstOrCreate([
+                'nama_tag' => $namaTag,
+            ]);
+
+            $idTags[] = $tag->id;
+        }
+
+        $pertanyaan->tags()->sync(array_unique($idTags));
 
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
     }
