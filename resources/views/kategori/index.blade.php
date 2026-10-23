@@ -9,7 +9,7 @@
     <h1>Daftar Kategori Pertanyaan</h1>
 
     <p>
-        <a href="{{ route('pertanyaan.index') }}">&larr; Kembali ke Daftar Pertanyaan</a> |
+        <a href="{{ route('staff.index') }}">&larr; Kembali ke Daftar Pertanyaan</a> |
         <a href="{{ route('kategori.create') }}">Tambah Kategori Baru</a>
     </p>
 

@@ -126,12 +126,12 @@
 
             <!-- Portal Staf Button & Trigger -->
             <div class="relative">
-                <button type="button" onclick="toggleStaffModal()" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-xs transition-all active:scale-95">
+                <a href="/login" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-xs transition-all active:scale-95">
                     <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     <span>Portal Staf</span>
-                </button>
+                </a>
             </div>
         </div>
     </header>
@@ -581,7 +581,7 @@
     </div>
 
     <!-- Modal: Portal Staf (Admin & Data Entry) -->
-    <div id="modalStaff" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 hidden">
+    <!-- <div id="modalStaff" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 hidden">
         <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-gray-150 transform transition-all">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2.5">
@@ -632,8 +632,8 @@
                 </a>
             </div>
 
-            <!-- Filter Status FAQ -->
-            <div class="pt-4 border-t border-gray-150">
+            <-- Filter Status FAQ -->
+            <!-- <div class="pt-4 border-t border-gray-150">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2.5">Filter Berdasarkan Status:</span>
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('pertanyaan.index') }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ !request('status') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">Semua Status</a>
@@ -644,7 +644,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <!-- Scripts for Accordion, Feedback, and NRP Customization -->
     <script>

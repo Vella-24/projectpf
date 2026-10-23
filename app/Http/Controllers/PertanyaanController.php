@@ -99,7 +99,7 @@ class PertanyaanController extends Controller
         }
         $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
 
-        return redirect()->route('pertanyaan.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
+        return redirect()->route('staff.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
     }
 
     /**
@@ -169,7 +169,7 @@ class PertanyaanController extends Controller
 
         $pertanyaan->tags()->sync(array_unique($idTags));
 
-        return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
+        return redirect()->route('staff.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
     }
 
     /**
@@ -180,6 +180,39 @@ class PertanyaanController extends Controller
         $pertanyaan = Pertanyaan::findOrFail($id);
         $pertanyaan->delete();
 
-        return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
+        return redirect()->route('staff.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
+    }
+
+    public function indexStaff(Request $request)
+    {
+        $query = Pertanyaan::with(['kategori', 'user'])->latest();
+
+        // Filter berdasarkan kategori jika dipilih
+        if ($request->filled('kategori_id')) {
+            $query->where('kategori_id', $request->kategori_id);
+        }
+
+        // Filter berdasarkan status jika dipilih
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Pencarian kata kunci pada judul pertanyaan atau jawaban
+        if ($request->filled('q')) {
+            $searchTerm = $request->q;
+
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
+                ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
+                ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
+                    $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
+                });
+            });
+        }
+
+        $pertanyaans = $query->paginate(10)->withQueryString();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+
+        return view('staff.index', compact('pertanyaans', 'kategoris'));
     }
 }
