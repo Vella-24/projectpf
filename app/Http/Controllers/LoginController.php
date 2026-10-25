@@ -45,6 +45,10 @@ class LoginController extends Controller
             ]
         ]);
 
+        if ($user->role === 'validator') {
+            return redirect()->route('validator.index');
+        }
+
         return redirect()->route('staff.index');
     }
 
