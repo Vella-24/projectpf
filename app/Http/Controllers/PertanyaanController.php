@@ -198,7 +198,22 @@ class PertanyaanController extends Controller
     public function destroy($id)
     {
         $pertanyaan = Pertanyaan::findOrFail($id);
+
+        //simpen id tag yg digunakan pertanyaan ini
+        $idTags = $pertanyaan->tags()->pluck('tags.id')->toArray();
+
         $pertanyaan->delete();
+
+        //periksa tag 1"
+        foreach ($idTags as $idTag) {
+            $tag = Tag::find($idTag);
+
+            //hapus tag jika sudah tidak digunakan pertanyaan mana pun
+            if ($tag && $tag->pertanyaans()->count() === 0) {
+                $tag->delete();
+            }
+        }
+
 
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
     }
