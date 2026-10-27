@@ -12,6 +12,9 @@ class KategoriController extends Controller
      */
     public function index()
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         $kategoris = Kategori::withCount('pertanyaans')->orderBy('nama_kategori')->get();
         return view('kategori.index', compact('kategoris'));
     }
@@ -21,6 +24,9 @@ class KategoriController extends Controller
      */
     public function create()
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         return view('kategori.create');
     }
 
@@ -29,6 +35,9 @@ class KategoriController extends Controller
      */
     public function store(Request $request)
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         $validated = $request->validate([
             'nama_kategori' => 'required|string|max:150|unique:kategoris,nama_kategori',
             'deskripsi' => 'nullable|string',
@@ -47,6 +56,9 @@ class KategoriController extends Controller
      */
     public function edit($id)
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         $kategori = Kategori::findOrFail($id);
         return view('kategori.edit', compact('kategori'));
     }
@@ -56,6 +68,9 @@ class KategoriController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         $kategori = Kategori::findOrFail($id);
 
         $validated = $request->validate([
@@ -76,6 +91,9 @@ class KategoriController extends Controller
      */
     public function destroy($id)
     {
+        if (session('user.role') === 'data_entry') {
+            return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
+        }
         $kategori = Kategori::findOrFail($id);
         $kategori->delete();
 

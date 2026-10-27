@@ -42,7 +42,20 @@ class PertanyaanController extends Controller
         $pertanyaans = $query->paginate(10)->withQueryString();
         $kategoris = Kategori::orderBy('nama_kategori')->get();
 
-        return view('pertanyaan.index', compact('pertanyaans', 'kategoris'));
+        // Statistik ringkasan untuk dashboard
+        $totalSemua = Pertanyaan::count();
+        $totalMenunggu = Pertanyaan::where('status', 'menunggu_validasi')->count();
+        $totalDisetujui = Pertanyaan::where('status', 'disetujui')->count();
+        $totalDitolak = Pertanyaan::where('status', 'ditolak')->count();
+
+        return view('pertanyaan.index', compact(
+            'pertanyaans',
+            'kategoris',
+            'totalSemua',
+            'totalMenunggu',
+            'totalDisetujui',
+            'totalDitolak'
+        ));
     }
 
     /**
