@@ -64,9 +64,25 @@
             </tbody>
         </table>
 
-        <div style="margin-top: 20px;">
-            {{ $pertanyaans->links() }}
-        </div>
+        <div style="display: flex; align-items: center; gap: 15px; margin-top: 20px;">
+
+        @if ($pertanyaans->onFirstPage())
+            <span style="color: #999;">&laquo; Previous</span>
+        @else
+            <a href="{{ $pertanyaans->previousPageUrl() }}">
+                &laquo; Previous
+            </a>
+        @endif
+
+        @if ($pertanyaans->hasMorePages())
+            <a href="{{ $pertanyaans->nextPageUrl() }}">
+                Next &raquo;
+            </a>
+        @else
+            <span style="color: #999;">Next &raquo;</span>
+        @endif
+
+    </div>
     </div>
 </body>
 </html>
