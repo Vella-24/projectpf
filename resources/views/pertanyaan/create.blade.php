@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Tambah Pertanyaan Baru</h1>
-    <p><a href="{{ route('staff.index') }}">&larr; Kembali ke Daftar Pertanyaan</a></p>
+    <p><a href="{{ route('pertanyaan.index') }}">&larr; Kembali ke Daftar Pertanyaan</a></p>
 
     <hr>
 

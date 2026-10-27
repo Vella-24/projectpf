@@ -7,11 +7,13 @@ use App\Http\Controllers\ValidatorController;
 use Illuminate\Support\Facades\Route;
 
 // Redirect halaman utama ke daftar pertanyaan Data Entry
-Route::get('/', function () {
-    return redirect()->route('pertanyaan.index');
-});
+// Route::get('/', function () {
+//     return redirect()->route('mahasiswa.index');
+// });
 
-Route::get('/staff', [PertanyaanController::class, 'indexStaff'])->name('staff.index');
+Route::get('/', [PertanyaanController::class, 'indexMahasiswa'])->name('mahasiswa.index');
+
+Route::get('/staff', [PertanyaanController::class, 'index'])->name('pertanyaan.index');
 
 Route::get('/login', [LoginController::class, 'login']);
 

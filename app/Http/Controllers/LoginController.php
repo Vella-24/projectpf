@@ -49,7 +49,7 @@ class LoginController extends Controller
             return redirect()->route('validator.index');
         }
 
-        return redirect()->route('staff.index');
+        return redirect()->route('pertanyaan.index');
     }
 
     public function logout()

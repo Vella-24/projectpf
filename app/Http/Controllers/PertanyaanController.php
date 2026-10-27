@@ -99,7 +99,7 @@ class PertanyaanController extends Controller
         }
         $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
 
-        return redirect()->route('staff.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
+        return redirect()->route('pertanyaan.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
     }
 
     /**
@@ -169,7 +169,7 @@ class PertanyaanController extends Controller
 
         $pertanyaan->tags()->sync(array_unique($idTags));
 
-        return redirect()->route('staff.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
+        return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
     }
 
     /**
@@ -180,10 +180,10 @@ class PertanyaanController extends Controller
         $pertanyaan = Pertanyaan::findOrFail($id);
         $pertanyaan->delete();
 
-        return redirect()->route('staff.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
+        return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
     }
 
-    public function indexStaff(Request $request)
+    public function indexMahasiswa(Request $request)
     {
         $query = Pertanyaan::with(['kategori', 'user'])->latest();
 
@@ -213,6 +213,6 @@ class PertanyaanController extends Controller
         $pertanyaans = $query->paginate(10)->withQueryString();
         $kategoris = Kategori::orderBy('nama_kategori')->get();
 
-        return view('staff.index', compact('pertanyaans', 'kategoris'));
+        return view('mahasiswa.index', compact('pertanyaans', 'kategoris'));
     }
 }
