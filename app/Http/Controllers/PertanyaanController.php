@@ -51,7 +51,9 @@ class PertanyaanController extends Controller
     public function create()
     {
         $kategoris = Kategori::orderBy('nama_kategori')->get();
-        return view('pertanyaan.create', compact('kategoris'));
+        $tags = Tag::orderBy('nama_tag')->get();
+
+        return view('pertanyaan.create', compact('kategoris', 'tags'));
     }
 
     /**
@@ -118,10 +120,11 @@ class PertanyaanController extends Controller
     {
         $pertanyaan = Pertanyaan::findOrFail($id);
         $kategoris = Kategori::orderBy('nama_kategori')->get();
+        $tags = Tag::orderBy('nama_tag')->get();
         $pertanyaan->load('tags');
 
 
-        return view('pertanyaan.edit', compact('pertanyaan', 'kategoris'));
+        return view('pertanyaan.edit', compact('pertanyaan', 'kategoris', 'tags'));
     }
 
     /**
@@ -149,12 +152,14 @@ class PertanyaanController extends Controller
         $daftarTag = $validated['tags'] ?? [];
         unset($validated['tags']);
 
-        $pertanyaan->update($validated);
+        $tagLama = $pertanyaan->tags()->pluck('tags.id')->toArray();
 
+        $pertanyaan->update($validated);
+       
         $idTags = [];
 
         foreach ($daftarTag as $namaTag) {
-            $namaTag = trim($namaTag);
+            $namaTag = strtolower(trim($namaTag));
 
             if ($namaTag === '') {
                 continue;
@@ -167,7 +172,22 @@ class PertanyaanController extends Controller
             $idTags[] = $tag->id;
         }
 
-        $pertanyaan->tags()->sync(array_unique($idTags));
+        $idTags = array_unique($idTags);
+
+        //ini bwat hubungkan pertanyaan dengan tag yang dipilih
+        $pertanyaan->tags()->sync($idTags);
+
+        //ini bwat klo cari tag lama yang sudah dilepas dari pertanyaan ini
+        $tagDihapus = array_diff($tagLama, $idTags);
+
+        foreach ($tagDihapus as $idTag) {
+            $tag = Tag::find($idTag);
+
+            //ini hapus tag dari tabel tags hanya jika tidak dipakai pertanyaan lain
+            if ($tag && $tag->pertanyaans()->count() === 0) {
+                $tag->delete();
+            }
+        }
 
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
     }

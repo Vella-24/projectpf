@@ -49,30 +49,39 @@
         </p>
 
         
+
         <p>
-            <label><strong>Kata kunci:</strong></label><br>
+            <label for="input-tag"><strong>Kata Kunci / Tag:</strong></label><br>
 
-            <div id="daftar-tag"
-                style="border: 1px solid #ccc; padding: 10px; border-radius: 8px; min-height: 45px;">
+            <input type="text" id="input-tag" list="saran-tag" placeholder="Ketik kata kunci..." autocomplete="off">
 
-                @foreach(old('tags', []) as $tag)
-                    <span class="tag-item"
-                        style="display: inline-block; background: #fce7ef; padding: 6px 10px; margin: 3px; border-radius: 6px;">
-                        {{ $tag }}
-                        <button type="button" class="hapus-tag">×</button>
-                    </span>
-                    <input type="hidden" name="tags[]" value="{{ $tag }}">
+            <datalist id="saran-tag">
+                @foreach ($tags as $tag)
+                    <option value="{{ $tag->nama_tag }}"></option>
                 @endforeach
+            </datalist>
 
-                <input
-                    type="text"
-                    id="input-tag"
-                    placeholder="Ketik kata kunci lalu tekan Enter"
-                    style="border: none; outline: none; padding: 8px; min-width: 250px;"
-                >
-            </div>
+            <button type="button" id="tambah-tag">Tambah</button>
         </p>
 
+        <div id="daftar-tag">
+            @foreach (
+                old(
+                    'tags',
+                    isset($pertanyaan)
+                        ? $pertanyaan->tags->pluck('nama_tag')->toArray()
+                        : []
+                ) as $namaTag
+            )
+                <span style="display: inline-block; margin: 4px; padding: 5px; border: 1px solid #ccc;">
+                    {{ $namaTag }}
+
+                    <button type="button" class="hapus-tag">×</button>
+
+                    <input type="hidden" name="tags[]" value="{{ $namaTag }}">
+                </span>
+            @endforeach
+        </div>
 
         <p>
             <label><strong>Status:</strong></label><br>
@@ -93,73 +102,74 @@
 <script>
     const inputTag = document.getElementById('input-tag');
     const daftarTag = document.getElementById('daftar-tag');
+    const tombolTambah = document.getElementById('tambah-tag');
 
-    function tambahTag(nama) {
-        nama = nama.trim();
+    function tambahTag() {
+        const namaTag = inputTag.value.trim().toLowerCase();
 
-        if (nama === '') {
+        if (namaTag === '') {
             return;
         }
 
-        //cek agar kata kunci yang sama tidak ditambahkan dua kali
-        const tagAda = Array.from(
+        // Cek agar tag yang sama tidak ditambahkan dua kali
+        const tagSudahAda = Array.from(
             daftarTag.querySelectorAll('input[name="tags[]"]')
-        ).some(input =>
-            input.value.toLowerCase() === nama.toLowerCase()
-        );
+        ).some(function(input) {
+            return input.value.toLowerCase() === namaTag;
+        });
 
-        if (tagAda) {
+        if (tagSudahAda) {
             inputTag.value = '';
             return;
         }
 
-        //membuat tampilan tag
-        const label = document.createElement('span');
-        label.className = 'tag-item';
-        label.style.cssText =
-            'display:inline-block;background:#fce7ef;padding:6px 10px;margin:3px;border-radius:6px;';
+        // Membuat tampilan tag
+        const item = document.createElement('span');
+        item.style.display = 'inline-block';
+        item.style.margin = '4px';
+        item.style.padding = '5px';
+        item.style.border = '1px solid #ccc';
 
-        const teks = document.createTextNode(nama + ' ');
-        label.appendChild(teks);
+        const teks = document.createElement('span');
+        teks.textContent = namaTag + ' ';
 
-        const tombol = document.createElement('button');
-        tombol.type = 'button';
-        tombol.className = 'hapus-tag';
-        tombol.textContent = '×';
+        const tombolHapus = document.createElement('button');
+        tombolHapus.type = 'button';
+        tombolHapus.textContent = '×';
 
-        label.appendChild(tombol);
+        // Input tersembunyi yang dikirim ke Laravel
+        const inputHidden = document.createElement('input');
+        inputHidden.type = 'hidden';
+        inputHidden.name = 'tags[]';
+        inputHidden.value = namaTag;
 
-        // Membuat input tersembunyi agar tag dikirim ke Laravel
-        const hidden = document.createElement('input');
-        hidden.type = 'hidden';
-        hidden.name = 'tags[]';
-        hidden.value = nama;
+        tombolHapus.addEventListener('click', function() {
+            item.remove();
+        });
 
-        daftarTag.insertBefore(label, inputTag);
-        daftarTag.insertBefore(hidden, inputTag);
+        item.appendChild(teks);
+        item.appendChild(tombolHapus);
+        item.appendChild(inputHidden);
+
+        daftarTag.appendChild(item);
 
         inputTag.value = '';
     }
 
-    //tambahkan tag ketika tombol Enter ditekan
+    tombolTambah.addEventListener('click', tambahTag);
+
+    // Tekan Enter untuk menambahkan tag yang dipilih atau diketik
     inputTag.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             event.preventDefault();
-            tambahTag(inputTag.value);
+            tambahTag();
         }
     });
 
-    //hapus tag ketika tombol × ditekan
+    // Tombol hapus untuk tag yang sudah tampil saat halaman dibuka
     daftarTag.addEventListener('click', function(event) {
         if (event.target.classList.contains('hapus-tag')) {
-            const label = event.target.closest('.tag-item');
-            const hidden = label.nextElementSibling;
-
-            if (hidden && hidden.name === 'tags[]') {
-                hidden.remove();
-            }
-
-            label.remove();
+            event.target.parentElement.remove();
         }
     });
 </script>
