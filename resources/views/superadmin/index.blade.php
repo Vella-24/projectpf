@@ -121,19 +121,31 @@
             background: #e9ecef;
             font-size: 12px;
         }
+
+        .logout-btn { 
+            float: right; 
+            background: #c62828; 
+            color: white; 
+            padding: 6px 12px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            font-size: 13px; }
     </style>
 </head>
 
 <body>
 
 <div class="container">
-
+    <a href="/login" class="logout-btn">Logout</a>
+    <br>
+    
     <div class="header">
         <div>
             <h1>Kelola Pengguna</h1>
             <p>Halaman pengelolaan akun Data Entry dan Validator.</p>
         </div>
 
+        
         <a href="{{ route('superadmin.users.create') }}" class="btn btn-add">
             + Tambah Pengguna
         </a>
