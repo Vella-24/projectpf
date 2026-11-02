@@ -14,7 +14,9 @@ class PertanyaanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Pertanyaan::with(['kategori', 'user'])->latest();
+        $query = Pertanyaan::with(['kategori', 'user'])
+        ->where('user_id', session('user.id'))
+        ->latest();
 
         // Filter berdasarkan kategori jika dipilih
         if ($request->filled('kategori_id')) {
@@ -47,6 +49,22 @@ class PertanyaanController extends Controller
         $totalMenunggu = Pertanyaan::where('status', 'menunggu_validasi')->count();
         $totalDisetujui = Pertanyaan::where('status', 'disetujui')->count();
         $totalDitolak = Pertanyaan::where('status', 'ditolak')->count();
+
+        //ambil ID Data Entry yang sedang login
+        $userId = session('user.id');
+
+        //ambil pertanyaan milik Data Entry tersebut
+        $query = Pertanyaan::where('user_id', $userId);
+
+        //hitung total seluruhnya
+        $totalSemua = (clone $query)->count();
+
+        //hitung pertanyaan yang menunggu validasi, disetuji, dan ditolaks
+        $totalMenunggu = (clone $query)->where('status', 'menunggu_validasi')->count();
+
+        $totalDisetujui = (clone $query)->where('status', 'disetujui')->count();
+
+        $totalDitolak = (clone $query)->where('status', 'ditolak')->count();
 
         return view('pertanyaan.index', compact(
             'pertanyaans',
@@ -92,8 +110,8 @@ class PertanyaanController extends Controller
         $daftarTag = $validated['tags'] ?? []; //ambil daftar kata kunci
         unset($validated['tags']);
 
-        // Pada Alpha version, default user_id menggunakan akun data entry (ID 1)
-        $validated['user_id'] = 1;
+        //ambil id user yg sedang login
+        $validated['user_id'] = session('user.id');
 
         $pertanyaan = Pertanyaan::create($validated);
 
@@ -131,7 +149,7 @@ class PertanyaanController extends Controller
      */
     public function edit($id)
     {
-        $pertanyaan = Pertanyaan::findOrFail($id);
+        $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
         $kategoris = Kategori::orderBy('nama_kategori')->get();
         $tags = Tag::orderBy('nama_tag')->get();
         $pertanyaan->load('tags');
@@ -145,7 +163,7 @@ class PertanyaanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $pertanyaan = Pertanyaan::findOrFail($id);
+        $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
 
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
@@ -210,7 +228,7 @@ class PertanyaanController extends Controller
      */
     public function destroy($id)
     {
-        $pertanyaan = Pertanyaan::findOrFail($id);
+        $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
 
         //simpen id tag yg digunakan pertanyaan ini
         $idTags = $pertanyaan->tags()->pluck('tags.id')->toArray();
