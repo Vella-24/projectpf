@@ -1,61 +1,118 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Review Pertanyaan - Validator ASK UBAYA</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f8f5f5; margin: 0; padding: 20px; }
-        .container { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h2 { color: #781f2b; margin-top: 0; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .box { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px; }
-        select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
-        .btn-submit { background: #781f2b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 15px; }
-        .btn-submit:hover { background: #5f1721; }
-        .btn-back { background: #6c757d; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; display: inline-block; margin-bottom: 15px; font-size: 13px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <a href="{{ route('validator.index') }}" class="btn-back">&larr; Kembali ke Daftar</a>
-        <h2>Review Pertanyaan & Jawaban</h2>
+@extends('layouts.validator')
 
-        <div class="form-group">
-            <label>Kategori:</label>
-            <p>{{ $pertanyaan->kategori->nama_kategori }}</p>
+@section('title', 'Review Pertanyaan - ASK UBAYA')
+@section('page_title', 'Review Pertanyaan')
+
+@php
+    $categoryName = $pertanyaan->kategori->nama_kategori ?? 'Umum';
+    $authorName = $pertanyaan->user->name ?? 'Kontributor';
+    $timeString = '-';
+    if ($pertanyaan->created_at) {
+        if ($pertanyaan->created_at->isToday()) {
+            $timeString = 'Hari ini, ' . $pertanyaan->created_at->format('H:i');
+        } elseif ($pertanyaan->created_at->isYesterday()) {
+            $timeString = 'Kemarin, ' . $pertanyaan->created_at->format('H:i');
+        } else {
+            $timeString = $pertanyaan->created_at->format('d M Y, H:i');
+        }
+    }
+    $statusLabel = $pertanyaan->status === 'menunggu_validasi' ? 'Menunggu' : ($pertanyaan->status === 'disetujui' ? 'Disetujui' : ($pertanyaan->status === 'ditolak' ? 'Perlu Revisi' : ucwords(str_replace('_', ' ', $pertanyaan->status))));
+@endphp
+
+@section('content')
+    <div class="max-w-4xl mx-auto">
+        <div class="mb-5">
+            <a href="{{ route('validator.index') }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#741228] hover:text-[#5e0d1f] transition">
+                &larr; Kembali ke Daftar Validasi
+            </a>
         </div>
 
-        <div class="form-group">
-            <label>Judul Pertanyaan:</label>
-            <div class="box">{{ $pertanyaan->judul_pertanyaan }}</div>
-        </div>
-
-        <div class="form-group">
-            <label>Isi Jawaban Resmi:</label>
-            <div class="box">{!! nl2br(e($pertanyaan->isi_jawaban)) !!}</div>
-        </div>
-
-        <form action="{{ route('validator.updateStatus', $pertanyaan->id) }}" method="POST">
-            @csrf
-            @method('PUT')
-
-            <div class="form-group">
-                <label for="status">Keputusan Validator:</label>
-                <select name="status" id="status" required>
-                    <option value="disetujui" {{ $pertanyaan->status == 'disetujui' ? 'selected' : '' }}>Setujui (Publish)</option>
-                    <option value="ditolak" {{ $pertanyaan->status == 'ditolak' ? 'selected' : '' }}>Tolak / Perlu Revisi</option>
-                </select>
+        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+            <!-- Category & Status Badge -->
+            <div class="flex items-center justify-between gap-3 mb-2">
+                <span class="text-xs font-extrabold uppercase tracking-wider text-[#741228]">
+                    {{ strtoupper($categoryName) }}
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $pertanyaan->status === 'menunggu_validasi' ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ($pertanyaan->status === 'disetujui' ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $pertanyaan->status === 'menunggu_validasi' ? 'bg-amber-500' : ($pertanyaan->status === 'disetujui' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                    {{ $statusLabel }}
+                </span>
             </div>
 
-            <div class="form-group">
-                <label for="catatan_validator">Catatan Validator (Opsional):</label>
-                <textarea name="catatan_validator" id="catatan_validator" rows="4" placeholder="Tuliskan catatan revisi jika ditolak...">{{ $pertanyaan->catatan_validator }}</textarea>
+            <!-- Big Title -->
+            <h2 class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug mb-2">
+                {{ $pertanyaan->judul_pertanyaan }}
+            </h2>
+
+            <!-- Sub Metadata -->
+            <p class="text-xs text-gray-400 mb-6">
+                Diajukan oleh <span class="text-gray-700 font-medium">{{ $authorName }}</span> &bull; {{ $timeString }}
+            </p>
+
+            <!-- Jawaban Yang Diajukan -->
+            <div class="mb-6">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
+                    JAWABAN YANG DIAJUKAN
+                </h4>
+                <div class="text-sm leading-relaxed text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 whitespace-pre-line">
+                    {{ $pertanyaan->isi_jawaban }}
+                </div>
             </div>
 
-            <button type="submit" class="btn-submit">Simpan Keputusan</button>
-        </form>
+            <!-- Form Keputusan Validator -->
+            <form id="formReview" action="{{ route('validator.updateStatus', $pertanyaan->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                
+                <input type="hidden" name="status" id="inputStatus" value="disetujui">
+
+                <!-- Catatan untuk Kontributor -->
+                <div class="mb-6">
+                    <label for="catatan_validator" class="block text-sm font-bold text-gray-800 mb-2">
+                        Catatan untuk kontributor
+                    </label>
+                    <textarea name="catatan_validator" id="detailCatatan" rows="4"
+                              placeholder="Tambahkan catatan jika konten perlu direvisi..."
+                              class="w-full p-3.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition resize-y">{{ $pertanyaan->catatan_validator }}</textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button type="button" onclick="submitDecision('ditolak')"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#FFF1F2] text-[#9F1239] hover:bg-[#FFE4E6] border border-[#FECDD3] transition cursor-pointer shadow-2xs">
+                        <svg class="w-4 h-4 text-[#9F1239]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Minta Revisi</span>
+                    </button>
+
+                    <button type="button" onclick="submitDecision('disetujui')"
+                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-[#741228] hover:bg-[#5e0d1f] text-white transition cursor-pointer shadow-sm">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Setujui & Terbitkan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+@endsection
+
+@section('scripts')
+<script>
+    function submitDecision(status) {
+        document.getElementById('inputStatus').value = status;
+        if (status === 'ditolak') {
+            const catatan = document.getElementById('detailCatatan').value.trim();
+            if (!catatan) {
+                if (!confirm('Anda belum memberikan catatan revisi untuk kontributor. Apakah Anda yakin ingin meminta revisi tanpa catatan?')) {
+                    document.getElementById('detailCatatan').focus();
+                    return;
+                }
+            }
+        }
+        document.getElementById('formReview').submit();
+    }
+</script>
+@endsection

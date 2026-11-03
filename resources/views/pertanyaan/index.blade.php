@@ -6,7 +6,7 @@
 @section('content')
 <div class="space-y-6 pt-2">
 
-    <!-- Greeting & Quick Action Banner (Gambar 2) -->
+    <!-- Greeting & Quick Action Banner -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold text-gray-900 tracking-tight">

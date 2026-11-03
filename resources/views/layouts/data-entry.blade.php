@@ -60,9 +60,24 @@
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex bg-[#FAF8F8] overflow-x-hidden">
 
-    <!-- Sidebar Kiri (Deep Maroon - Sticky agar selalu terlihat & berada di dalam flex flow) -->
-    <aside class="w-64 bg-[#3a0714] text-white flex flex-col justify-between h-screen sticky top-0 shrink-0 z-30 shadow-xl">
-        <div class="p-5 flex flex-col h-full justify-between overflow-y-auto">
+    @php
+        $userName = session('user.name') ?? 'Staff Data Entry';
+        $userRole = session('user.role') ?? 'Data Entry';
+        $nameParts = explode(' ', trim($userName));
+        $initials = '';
+        if (count($nameParts) >= 2) {
+            $initials = strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1));
+        } else {
+            $initials = strtoupper(substr($userName, 0, 2));
+        }
+        if (!$initials) $initials = 'DE';
+    @endphp
+
+    <!-- Sidebar Kiri Data Entry (Interaktif: Buka saat profil diklik, tutup via silang/profil, konten mengecil/melebar) -->
+    <aside id="leftSidebar" 
+           class="bg-[#3a0714] text-white shrink-0 h-screen sticky top-0 z-40 transition-all duration-300 ease-in-out overflow-hidden w-0 opacity-0 pointer-events-none">
+        
+        <div class="w-64 p-5 flex flex-col h-full justify-between overflow-y-auto">
             <div>
                 <!-- Brand Logo ASK UBAYA -->
                 <div class="flex items-center gap-3 px-2 py-3 mb-4">
@@ -83,11 +98,11 @@
                 <!-- User Profile Card -->
                 <div class="bg-white/10 rounded-2xl p-3 flex items-center gap-3 border border-white/10 mb-6">
                     <div class="w-10 h-10 rounded-full bg-[#82142d] flex items-center justify-center font-bold text-white text-sm shadow-inner shrink-0">
-                        DE
+                        {{ $initials }}
                     </div>
                     <div class="overflow-hidden">
-                        <p class="text-xs font-bold text-white truncate">{{ session('user.name') ?? 'Staff Data Entry' }}</p>
-                        <p class="text-[11px] text-rose-200/70 capitalize">{{ str_replace('_', ' ', session('user.role') ?? 'Data Entry') }}</p>
+                        <p class="text-xs font-bold text-white truncate">{{ $userName }}</p>
+                        <p class="text-[11px] text-rose-200/70 capitalize">{{ str_replace('_', ' ', $userRole) }}</p>
                     </div>
                 </div>
 
@@ -134,43 +149,56 @@
         </div>
     </aside>
 
-    <!-- Main Content Area (min-w-0 flex-1 agar mengisi sisa layar pas 100% tanpa geser ke kanan) -->
-    <div class="flex-1 min-w-0 flex flex-col min-h-screen">
+    <!-- Main Content Area: Otomatis menyesuaikan lebar (mengecil saat sidebar terbuka) -->
+    <div id="mainWrapper" class="flex-1 min-w-0 flex flex-col min-h-screen transition-all duration-300 ease-in-out">
         
         <!-- Top Navbar -->
-        <header class="h-18 px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between border-b border-gray-100 bg-[#FAF8F8]/90 backdrop-blur-md sticky top-0 z-20">
-            <div>
-                <h2 class="text-lg font-bold text-gray-900 leading-tight">@yield('page_title', 'Beranda')</h2>
-                <p class="text-xs text-gray-400 font-medium">
-                    Data Entry &bull; 
-                    @php
-                        $hariIndo = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
-                        $bulanIndo = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
-                        $now = now();
-                        $tglFormatted = ($hariIndo[$now->format('l')] ?? $now->format('l')) . ', ' . $now->format('j') . ' ' . ($bulanIndo[(int)$now->format('n')] ?? $now->format('F')) . ' ' . $now->format('Y');
-                    @endphp
-                    {{ $tglFormatted }}
-                </p>
+        <header class="h-18 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between border-b border-gray-100 bg-white/90 backdrop-blur-md sticky top-0 z-20 shadow-2xs">
+            <!-- Left Navbar: Tombol Hamburger Kiri Pojok + Judul Halaman & Tanggal -->
+            <div class="flex items-center gap-3 sm:gap-3.5">
+                <!-- Tombol Toggle Sidebar (Menu Hamburger di Kiri Pojok) -->
+                <button type="button" onclick="toggleSidebar()" 
+                        class="w-10 h-10 rounded-xl bg-gray-50 hover:bg-[#FAF0F2] border border-gray-200 hover:border-[#F5D0D6] text-[#741228] flex items-center justify-center transition shadow-2xs cursor-pointer group shrink-0" 
+                        title="Buka / Tutup Sidebar Menu">
+                    <svg class="w-5 h-5 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10" />
+                    </svg>
+                </button>
+
+                <!-- Judul Halaman & Tanggal -->
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-tight">@yield('page_title', 'Beranda')</h2>
+                    <p class="text-xs text-gray-400 font-medium">
+                        Data Entry &bull; 
+                        @php
+                            $hariIndo = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
+                            $bulanIndo = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+                            $now = now();
+                            $tglFormatted = ($hariIndo[$now->format('l')] ?? $now->format('l')) . ', ' . $now->format('j') . ' ' . ($bulanIndo[(int)$now->format('n')] ?? $now->format('F')) . ' ' . $now->format('Y');
+                        @endphp
+                        {{ $tglFormatted }}
+                    </p>
+                </div>
             </div>
 
             <!-- Header Right Section -->
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 sm:gap-4">
                 <!-- Notification Bell -->
-                <button type="button" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 shadow-sm transition hover:bg-gray-50 relative">
+                <button type="button" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 shadow-sm transition hover:bg-gray-50 relative" title="Notifikasi">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                     </svg>
                     <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
                 </button>
 
-                <!-- Profile Info Pill -->
-                <div class="flex items-center gap-3 pl-2 border-l border-gray-200">
-                    <div class="w-9 h-9 rounded-full bg-rose-100 text-[#741228] font-bold text-xs flex items-center justify-center border border-rose-200">
-                        DE
+                <!-- Profile Info Display (Static, Tidak memicu sidebar) -->
+                <div class="flex items-center gap-2.5 p-1 text-left">
+                    <div class="w-9 h-9 rounded-full bg-[#FAF0F2] text-[#741228] font-bold text-xs flex items-center justify-center border border-[#F5D0D6] shadow-2xs">
+                        {{ $initials }}
                     </div>
-                    <div class="hidden sm:block text-left">
-                        <p class="text-xs font-bold text-gray-800 leading-tight">{{ session('user.name') ?? 'Data Entry UBAYA' }}</p>
-                        <p class="text-[11px] text-gray-400 capitalize">{{ str_replace('_', ' ', session('user.role') ?? 'Data Entry') }}</p>
+                    <div class="hidden sm:block text-left pr-1">
+                        <p class="text-xs font-bold text-gray-800 leading-tight">{{ $userName }}</p>
+                        <p class="text-[11px] text-gray-400 capitalize">{{ str_replace('_', ' ', $userRole) }}</p>
                     </div>
                 </div>
             </div>
@@ -217,6 +245,24 @@
             @yield('content')
         </main>
     </div>
+
+    <!-- Toggle Sidebar JavaScript -->
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('leftSidebar');
+            if (!sidebar) return;
+
+            const isCollapsed = sidebar.classList.contains('w-0');
+
+            if (isCollapsed) {
+                sidebar.classList.remove('w-0', 'opacity-0', 'pointer-events-none');
+                sidebar.classList.add('w-64', 'opacity-100', 'pointer-events-auto');
+            } else {
+                sidebar.classList.remove('w-64', 'opacity-100', 'pointer-events-auto');
+                sidebar.classList.add('w-0', 'opacity-0', 'pointer-events-none');
+            }
+        }
+    </script>
 
     @yield('scripts')
 </body>
