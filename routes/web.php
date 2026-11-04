@@ -35,20 +35,21 @@ Route::prefix('validator')->group(function () {
     Route::put('/pertanyaan/{id}/status', [ValidatorController::class, 'updateStatus'])->name('validator.updateStatus');
 });
 
-Route::get('/superadmin', [AdminController::class, 'index'])
-    ->name('superadmin.index');
+// Super Admin Routes
+Route::prefix('superadmin')->group(function () {
+    // Kelola Pertanyaan (Superadmin CRUD - pertanyaan disetujui / dipublikasikan)
+    Route::get('/pertanyaan', [AdminController::class, 'pertanyaanIndex'])->name('superadmin.pertanyaan.index');
+    Route::get('/pertanyaan/create', [AdminController::class, 'pertanyaanCreate'])->name('superadmin.pertanyaan.create');
+    Route::post('/pertanyaan', [AdminController::class, 'pertanyaanStore'])->name('superadmin.pertanyaan.store');
+    Route::get('/pertanyaan/{id}/edit', [AdminController::class, 'pertanyaanEdit'])->name('superadmin.pertanyaan.edit');
+    Route::put('/pertanyaan/{id}', [AdminController::class, 'pertanyaanUpdate'])->name('superadmin.pertanyaan.update');
+    Route::delete('/pertanyaan/{id}', [AdminController::class, 'pertanyaanDestroy'])->name('superadmin.pertanyaan.destroy');
 
-Route::get('/superadmin/create', [AdminController::class, 'create'])
-    ->name('superadmin.users.create');
-
-Route::post('/superadmin', [AdminController::class, 'store'])
-    ->name('superadmin.users.store');
-
-Route::get('/superadmin/{id}/edit', [AdminController::class, 'edit'])
-    ->name('superadmin.users.edit');
-
-Route::put('/superadmin/{id}', [AdminController::class, 'update'])
-    ->name('superadmin.users.update');
-
-Route::delete('/superadmin/{id}', [AdminController::class, 'destroy'])
-    ->name('superadmin.users.destroy');
+    // Manajemen Pengguna
+    Route::get('/', [AdminController::class, 'index'])->name('superadmin.index');
+    Route::get('/create', [AdminController::class, 'create'])->name('superadmin.users.create');
+    Route::post('/', [AdminController::class, 'store'])->name('superadmin.users.store');
+    Route::get('/{id}/edit', [AdminController::class, 'edit'])->name('superadmin.users.edit');
+    Route::put('/{id}', [AdminController::class, 'update'])->name('superadmin.users.update');
+    Route::delete('/{id}', [AdminController::class, 'destroy'])->name('superadmin.users.destroy');
+});

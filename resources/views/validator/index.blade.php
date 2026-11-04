@@ -32,26 +32,18 @@
         ];
     })->values();
 
-    $menungguCount = $pertanyaans->where('status', 'menunggu_validasi')->count();
+    $firstItem = $pertanyaanItems->first();
 @endphp
 
 @section('content')
-    <!-- Header Sub-Title & Counter Badge -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Validasi Konten</h2>
-            <p class="text-sm text-gray-500 mt-1">
-                Tinjau pengajuan aktif dan telusuri seluruh hasil validasi dalam satu tempat.
-            </p>
-        </div>
-        <div>
-            <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#FEF5E7] text-[#9A6016] border border-[#FDE5BE] shadow-2xs">
-                {{ $menungguCount }} perlu ditinjau
-            </span>
-        </div>
+    <!-- Header Sub-Title (Counter badge 8 perlu ditinjau sudah dihapus) -->
+    <div class="mb-6">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Validasi Konten</h2>
+        <p class="text-sm text-gray-500 mt-1">
+            Tinjau pengajuan aktif dan telusuri seluruh hasil validasi dalam satu tempat.
+        </p>
     </div>
 
-    @if($pertanyaanItems->count() > 0)
     <!-- Split-Pane Layout (Master-Detail 2 Kolom) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
         
@@ -67,7 +59,8 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </span>
-                    <input type="text" id="searchInput" oninput="handleSearch(this.value)"
+                    <input type="text" id="searchInput" oninput="handleSearchInput(this.value)" onkeydown="handleSearchKey(event)"
+                           value="{{ request('q') }}"
                            placeholder="Cari konten..."
                            class="w-full pl-9 pr-3.5 py-2.5 bg-gray-50/70 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition">
                 </div>
@@ -76,10 +69,10 @@
                 <div class="relative">
                     <select id="statusFilter" onchange="handleFilter(this.value)"
                             class="w-full appearance-none bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm text-gray-700 font-medium focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition cursor-pointer">
-                        <option value="perlu_ditinjau">Perlu Ditinjau</option>
-                        <option value="semua">Semua Status</option>
-                        <option value="disetujui">Disetujui</option>
-                        <option value="ditolak">Perlu Revisi (Ditolak)</option>
+                        <option value="menunggu_validasi" {{ ($status ?? 'menunggu_validasi') === 'menunggu_validasi' ? 'selected' : '' }}>Perlu Ditinjau</option>
+                        <option value="disetujui" {{ ($status ?? '') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        <option value="ditolak" {{ ($status ?? '') === 'ditolak' ? 'selected' : '' }}>Perlu Direvisi</option>
+                        <option value="semua" {{ ($status ?? '') === 'semua' ? 'selected' : '' }}>Semua Status</option>
                     </select>
                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -91,7 +84,7 @@
 
             <!-- List Card Container -->
             <div id="cardListContainer" class="space-y-2.5 max-h-[640px] overflow-y-auto pr-1">
-                @foreach($pertanyaanItems as $index => $item)
+                @forelse($pertanyaanItems as $index => $item)
                 <div id="card-{{ $item['id'] }}" 
                      onclick="selectItem({{ $item['id'] }})"
                      data-id="{{ $item['id'] }}"
@@ -120,58 +113,64 @@
                         {{ $item['kategori'] }} &bull; oleh <span class="text-gray-600">{{ $item['user'] }}</span>
                     </p>
                 </div>
-                @endforeach
+                @empty
+                <div class="text-center py-12 px-4 text-gray-400">
+                    <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-xs font-semibold text-gray-500">Tidak ada pengajuan</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Tidak ditemukan pengajuan dengan status ini.</p>
+                </div>
+                @endforelse
 
-                <!-- Empty Search / Filter State -->
+                <!-- Empty Search / Filter State (client-side) -->
                 <div id="noResults" class="hidden text-center py-8 text-gray-400 text-sm">
-                    Tidak ada konten yang sesuai dengan pencarian atau filter.
+                    Tidak ada konten yang sesuai dengan pencarian.
                 </div>
             </div>
 
-            <!-- Pagination (Tetap sesuai pagination asli Laravel) -->
-            @if($pertanyaans->hasPages())
+            <!-- Pagination (Next hanya aktif jika > 10 data / hasMorePages) -->
             <div class="flex items-center justify-between pt-4 mt-3 border-t border-gray-100 text-xs">
                 <div>
                     @if ($pertanyaans->onFirstPage())
-                        <span class="text-gray-300 cursor-not-allowed">&laquo; Sebelumnya</span>
+                        <span class="text-gray-300 cursor-not-allowed select-none">&laquo; Sebelumnya</span>
                     @else
                         <a href="{{ $pertanyaans->previousPageUrl() }}" class="font-bold text-[#741228] hover:underline">&laquo; Sebelumnya</a>
                     @endif
                 </div>
-                <span class="text-gray-400">Hal. {{ $pertanyaans->currentPage() }} dari {{ $pertanyaans->lastPage() }}</span>
+                <span class="text-gray-400">Hal. {{ $pertanyaans->currentPage() }} dari {{ max(1, $pertanyaans->lastPage()) }}</span>
                 <div>
                     @if ($pertanyaans->hasMorePages())
                         <a href="{{ $pertanyaans->nextPageUrl() }}" class="font-bold text-[#741228] hover:underline">Selanjutnya &raquo;</a>
                     @else
-                        <span class="text-gray-300 cursor-not-allowed">Selanjutnya &raquo;</span>
+                        <span class="text-gray-300 cursor-not-allowed select-none">Selanjutnya &raquo;</span>
                     @endif
                 </div>
             </div>
-            @endif
         </div>
 
         <!-- Kolom Kanan: Detail Review & Form Keputusan (lg:col-span-7) -->
         <div class="lg:col-span-7 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 sticky top-20">
-            
+            @if($firstItem)
             <!-- Category Tag & Status Badge -->
             <div class="flex items-center justify-between gap-3 mb-2">
                 <span id="detailKategori" class="text-xs font-extrabold uppercase tracking-wider text-[#741228]">
-                    {{ $pertanyaanItems[0]['kategori_upper'] }}
+                    {{ $firstItem['kategori_upper'] }}
                 </span>
-                <span id="detailStatusBadge" class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60">
-                    <span id="detailStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    <span id="detailStatus">{{ $pertanyaanItems[0]['status_label'] }}</span>
+                <span id="detailStatusBadge" class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $firstItem['status'] === 'menunggu_validasi' ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ($firstItem['status'] === 'disetujui' ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
+                    <span id="detailStatusDot" class="w-1.5 h-1.5 rounded-full {{ $firstItem['status'] === 'menunggu_validasi' ? 'bg-amber-500' : ($firstItem['status'] === 'disetujui' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                    <span id="detailStatus">{{ $firstItem['status_label'] }}</span>
                 </span>
             </div>
 
             <!-- Big Title -->
             <h2 id="detailJudul" class="text-xl sm:text-2xl font-extrabold text-gray-900 leading-snug mb-2">
-                {{ $pertanyaanItems[0]['judul'] }}
+                {{ $firstItem['judul'] }}
             </h2>
 
             <!-- Sub Metadata -->
             <p id="detailMeta" class="text-xs text-gray-400 mb-6">
-                Diajukan oleh <span class="text-gray-700 font-medium">{{ $pertanyaanItems[0]['user'] }}</span> &bull; {{ $pertanyaanItems[0]['waktu'] }}
+                Diajukan oleh <span class="text-gray-700 font-medium">{{ $firstItem['user'] }}</span> &bull; {{ $firstItem['waktu'] }}
             </p>
 
             <!-- Section: Jawaban Yang Diajukan -->
@@ -180,17 +179,18 @@
                     JAWABAN YANG DIAJUKAN
                 </h4>
                 <div id="detailJawaban" class="text-sm leading-relaxed text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 whitespace-pre-line">
-                    {{ $pertanyaanItems[0]['jawaban'] }}
+                    {{ $firstItem['jawaban'] }}
                 </div>
             </div>
 
             <!-- Form Keputusan Validator (Menggunakan Route updateStatus yang ada) -->
-            <form id="formReview" action="{{ $pertanyaanItems[0]['update_url'] }}" method="POST">
+            <form id="formReview" action="{{ $firstItem['update_url'] }}" method="POST">
                 @csrf
                 @method('PUT')
                 
                 <!-- Hidden input status: akan diisi 'disetujui' atau 'ditolak' via button -->
                 <input type="hidden" name="status" id="inputStatus" value="disetujui">
+                <input type="hidden" name="redirect_status" value="{{ $status ?? 'menunggu_validasi' }}">
 
                 <!-- Section: Catatan untuk Kontributor -->
                 <div class="mb-6">
@@ -199,7 +199,7 @@
                     </label>
                     <textarea name="catatan_validator" id="detailCatatan" rows="4"
                               placeholder="Tambahkan catatan jika konten perlu direvisi..."
-                              class="w-full p-3.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition resize-y">{{ $pertanyaanItems[0]['catatan'] }}</textarea>
+                              class="w-full p-3.5 bg-gray-50/60 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition resize-y">{{ $firstItem['catatan'] }}</textarea>
                 </div>
 
                 <!-- Action Buttons -->
@@ -223,22 +223,21 @@
                     </button>
                 </div>
             </form>
-
+            @else
+            <!-- Placeholder saat tidak ada data -->
+            <div class="h-full min-h-[460px] flex flex-col items-center justify-center text-center p-8 text-gray-400">
+                <div class="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-3">
+                    <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <p class="font-bold text-gray-700 text-sm mb-1">Tidak ada pengajuan yang dipilih</p>
+                <p class="text-xs text-gray-400 max-w-xs">Gunakan filter status atau kata kunci pencarian di sisi kiri untuk melihat data pengajuan lainnya.</p>
+            </div>
+            @endif
         </div>
 
     </div>
-    @else
-    <!-- Empty State ketika belum ada pertanyaan sama sekali -->
-    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center max-w-lg mx-auto">
-        <div class="w-16 h-16 rounded-full bg-rose-50 text-[#741228] flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-        </div>
-        <h3 class="text-lg font-bold text-gray-900 mb-1">Belum Ada Pengajuan</h3>
-        <p class="text-sm text-gray-500">Saat ini tidak ada pertanyaan yang menunggu validasi dari staf.</p>
-    </div>
-    @endif
 @endsection
 
 @section('scripts')
@@ -254,26 +253,41 @@
 
         activeId = id;
 
-        document.getElementById('detailKategori').textContent = item.kategori_upper;
-        document.getElementById('detailStatus').textContent = item.status_label;
-        document.getElementById('detailJudul').textContent = item.judul;
-        document.getElementById('detailMeta').innerHTML = `Diajukan oleh <span class="text-gray-700 font-medium">${item.user}</span> &bull; ${item.waktu}`;
-        document.getElementById('detailJawaban').textContent = item.jawaban;
-        document.getElementById('detailCatatan').value = item.catatan || '';
-        document.getElementById('formReview').action = item.update_url;
+        const elKategori = document.getElementById('detailKategori');
+        if (elKategori) elKategori.textContent = item.kategori_upper;
+
+        const elStatus = document.getElementById('detailStatus');
+        if (elStatus) elStatus.textContent = item.status_label;
+
+        const elJudul = document.getElementById('detailJudul');
+        if (elJudul) elJudul.textContent = item.judul;
+
+        const elMeta = document.getElementById('detailMeta');
+        if (elMeta) elMeta.innerHTML = `Diajukan oleh <span class="text-gray-700 font-medium">${item.user}</span> &bull; ${item.waktu}`;
+
+        const elJawaban = document.getElementById('detailJawaban');
+        if (elJawaban) elJawaban.textContent = item.jawaban;
+
+        const elCatatan = document.getElementById('detailCatatan');
+        if (elCatatan) elCatatan.value = item.catatan || '';
+
+        const formReview = document.getElementById('formReview');
+        if (formReview) formReview.action = item.update_url;
 
         // Status Badge styling
         const badge = document.getElementById('detailStatusBadge');
         const dot = document.getElementById('detailStatusDot');
-        if (item.status === 'menunggu_validasi') {
-            badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60";
-            dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
-        } else if (item.status === 'disetujui') {
-            badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60";
-            dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
-        } else {
-            badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/60";
-            dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
+        if (badge && dot) {
+            if (item.status === 'menunggu_validasi') {
+                badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+            } else if (item.status === 'disetujui') {
+                badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+            } else {
+                badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/60";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
+            }
         }
 
         // Update styling kartu aktif di list kiri
@@ -291,58 +305,63 @@
 
     // Submit form review keputusan
     function submitDecision(status) {
+        const formReview = document.getElementById('formReview');
+        if (!formReview) return;
+
         document.getElementById('inputStatus').value = status;
         
         if (status === 'ditolak') {
-            const catatan = document.getElementById('detailCatatan').value.trim();
+            const catatan = document.getElementById('detailCatatan')?.value.trim();
             if (!catatan) {
                 if (!confirm('Anda belum memberikan catatan revisi untuk kontributor. Apakah Anda yakin ingin meminta revisi tanpa catatan?')) {
-                    document.getElementById('detailCatatan').focus();
+                    document.getElementById('detailCatatan')?.focus();
                     return;
                 }
             }
         }
         
-        document.getElementById('formReview').submit();
+        formReview.submit();
     }
 
-    function handleSearch(keyword) {
-        filterCards();
-    }
-
+    // Filter status via server request sehingga pagination 10 data per halaman sinkron
     function handleFilter(statusValue) {
-        filterCards();
+        const url = new URL(window.location.origin + window.location.pathname);
+        url.searchParams.set('status', statusValue);
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput && searchInput.value.trim() !== '') {
+            url.searchParams.set('q', searchInput.value.trim());
+        }
+        window.location.href = url.toString();
     }
 
-    function filterCards() {
-        const keyword = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-        const filterVal = document.getElementById('statusFilter')?.value || 'perlu_ditinjau';
+    // Full search on Enter
+    function handleSearchKey(event) {
+        if (event.key === 'Enter') {
+            const url = new URL(window.location.origin + window.location.pathname);
+            const filterVal = document.getElementById('statusFilter')?.value || 'menunggu_validasi';
+            url.searchParams.set('status', filterVal);
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput && searchInput.value.trim() !== '') {
+                url.searchParams.set('q', searchInput.value.trim());
+            }
+            window.location.href = url.toString();
+        }
+    }
 
+    // Instant local filter on typing
+    function handleSearchInput(keyword) {
+        const kw = keyword.toLowerCase().trim();
         let visibleCount = 0;
         let firstVisibleId = null;
 
         document.querySelectorAll('.pertanyaan-card').forEach(card => {
-            const status = card.dataset.status;
-            const judul = card.dataset.judul;
-            const kategori = card.dataset.kategori;
-            const user = card.dataset.user;
+            const judul = card.dataset.judul || '';
+            const kategori = card.dataset.kategori || '';
+            const user = card.dataset.user || '';
             const id = parseInt(card.dataset.id);
 
-            let matchStatus = true;
-            if (filterVal === 'perlu_ditinjau') {
-                matchStatus = (status === 'menunggu_validasi');
-            } else if (filterVal === 'disetujui') {
-                matchStatus = (status === 'disetujui');
-            } else if (filterVal === 'ditolak') {
-                matchStatus = (status === 'ditolak');
-            }
-
-            let matchSearch = true;
-            if (keyword) {
-                matchSearch = judul.includes(keyword) || kategori.includes(keyword) || user.includes(keyword);
-            }
-
-            if (matchStatus && matchSearch) {
+            const match = !kw || judul.includes(kw) || kategori.includes(kw) || user.includes(kw);
+            if (match) {
                 card.style.display = 'block';
                 visibleCount++;
                 if (!firstVisibleId) firstVisibleId = id;
@@ -353,16 +372,12 @@
 
         const noResults = document.getElementById('noResults');
         if (noResults) {
-            if (visibleCount === 0) {
-                noResults.classList.remove('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
+            noResults.classList.toggle('hidden', visibleCount > 0);
+        }
+
+        if (firstVisibleId && firstVisibleId !== activeId) {
+            selectItem(firstVisibleId);
         }
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        filterCards();
-    });
 </script>
 @endsection

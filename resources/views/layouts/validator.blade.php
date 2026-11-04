@@ -118,11 +118,6 @@
                             </svg>
                             <span>Validasi Konten</span>
                         </div>
-                        @if(isset($menungguCount))
-                        <span class="bg-[#d97706] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
-                            {{ $menungguCount }}
-                        </span>
-                        @endif
                     </a>
                 </div>
             </div>

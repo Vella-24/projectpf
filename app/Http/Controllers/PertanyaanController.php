@@ -253,14 +253,12 @@ class PertanyaanController extends Controller
     {
         $query = Pertanyaan::with(['kategori', 'user'])->latest();
 
+        // Mahasiswa hanya melihat pertanyaan yang sudah disetujui (publish)
+        $query->where('status', 'disetujui');
+
         // Filter berdasarkan kategori jika dipilih
         if ($request->filled('kategori_id')) {
             $query->where('kategori_id', $request->kategori_id);
-        }
-
-        // Filter berdasarkan status jika dipilih
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
         }
 
         // Pencarian kata kunci pada judul pertanyaan atau jawaban

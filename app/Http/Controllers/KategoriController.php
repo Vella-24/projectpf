@@ -15,7 +15,11 @@ class KategoriController extends Controller
         if (session('user.role') === 'data_entry') {
             return redirect()->route('pertanyaan.index')->with('error', 'Akses ditolak: Akun Data Entry tidak diizinkan mengelola kategori.');
         }
-        $kategoris = Kategori::withCount('pertanyaans')->orderBy('nama_kategori')->get();
+        // Hanya menghitung pertanyaan yang berstatus disetujui (sudah publish)
+        $kategoris = Kategori::withCount(['pertanyaans' => function ($q) {
+            $q->where('status', 'disetujui');
+        }])->orderBy('nama_kategori')->get();
+
         return view('kategori.index', compact('kategoris'));
     }
 
