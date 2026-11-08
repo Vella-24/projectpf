@@ -73,6 +73,7 @@
                     <tr class="bg-gray-50/70 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-400">
                         <th class="py-3 px-4 rounded-l-xl">NAMA</th>
                         <th class="py-3 px-4">ROLE</th>
+                        <th class="py-3 px-4">STATUS</th>
                         <th class="py-3 px-4 text-right rounded-r-xl">AKSI</th>
                     </tr>
                 </thead>
@@ -81,7 +82,8 @@
                     <tr class="user-row hover:bg-gray-50/60 transition group"
                         data-name="{{ strtolower($user->name) }}"
                         data-email="{{ strtolower($user->email) }}"
-                        data-role="{{ strtolower($user->role) }}">
+                        data-role="{{ strtolower($user->role) }}"
+                        data-status="{{ strtolower($user->status) }}">
                         
                         <!-- Nama & Email di bawahnya -->
                         <td class="py-3.5 px-4">
@@ -92,6 +94,21 @@
                         <!-- Role Pengguna -->
                         <td class="py-3.5 px-4 text-sm text-gray-600 font-medium">
                             {{ ucwords(str_replace('_', ' ', $user->role)) }}
+                        </td>
+
+                        <!-- Status Pengguna -->
+                        <td class="py-3.5 px-4">
+                            @if ($user->status == 'aktif')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                                    Aktif
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                                    Nonaktif
+                                </span>
+                            @endif
                         </td>
 
                         <!-- Aksi (Edit & Delete Icons Sesuai Desain Foto) -->

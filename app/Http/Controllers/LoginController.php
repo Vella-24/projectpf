@@ -37,6 +37,13 @@ class LoginController extends Controller
             return back()->with('error', 'Role tidak valid!');
         }
 
+        if ($user->status !== 'aktif') {
+        return back()->with(
+            'error',
+            'Akun Anda sedang nonaktif. Silakan hubungi Super Admin!'
+        );
+    }
+
         session([
             'user' => [
                 'id' => $user->id,

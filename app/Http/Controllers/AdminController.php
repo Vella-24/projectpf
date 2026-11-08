@@ -221,13 +221,14 @@ class AdminController extends Controller
             'email' => 'required|email|unique:users,email,' . $id,
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:data_entry,validator,super_admin',
+            'status' => 'required|in:aktif,nonaktif',
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->role = $validated['role'];
+        $user->status = $validated['status'];
 
-        // Password hanya diperbarui jika diisi
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
         }
