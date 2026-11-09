@@ -279,4 +279,17 @@ class PertanyaanController extends Controller
 
         return view('mahasiswa.index', compact('pertanyaans', 'kategoris'));
     }
+
+    public function search(Request $request)
+{
+    $request->validate([
+        'q' => 'required|string|max:255',
+    ]);
+
+    $keyword = trim($request->q);
+
+    $hasil = Pertanyaan::search($keyword)->get();
+
+    return view('mahasiswa.search', compact('hasil', 'keyword'));
+}
 }

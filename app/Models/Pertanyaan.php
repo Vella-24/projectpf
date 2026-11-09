@@ -4,11 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 use App\Models\Tag;
+
 
 class Pertanyaan extends Model
 {
-    use HasFactory;
+    use HasFactory, Searchable;
 
     protected $fillable = [
         'kategori_id',
@@ -44,5 +46,21 @@ class Pertanyaan extends Model
             'pertanyaan_id',
             'tag_id'
         );
+    }
+
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'judul_pertanyaan' => $this->judul_pertanyaan,
+            'isi_jawaban' => $this->isi_jawaban,
+            'kategori_id' => $this->kategori_id,
+            'status' => $this->status,
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return $this->status === 'disetujui';
     }
 }

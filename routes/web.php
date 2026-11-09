@@ -53,3 +53,6 @@ Route::prefix('superadmin')->group(function () {
     Route::put('/{id}', [AdminController::class, 'update'])->name('superadmin.users.update');
     Route::delete('/{id}', [AdminController::class, 'destroy'])->name('superadmin.users.destroy');
 });
+
+Route::get('/mahasiswa/search', [PertanyaanController::class, 'search'])
+    ->name('mahasiswa.search');
