@@ -4,7 +4,7 @@
 @section('page_title', 'Buat Pengetahuan Baru')
 
 @section('content')
-<div class="space-y-6 pt-2">
+<div class="space-y-6 w-full">
 
     <!-- Form Pembungkus Utama -->
     <form id="form-pengetahuan" action="{{ route('pertanyaan.store') }}" method="POST">
@@ -24,13 +24,13 @@
                 <span>Kembali</span>
             </a>
 
-            <!-- Tombol Aksi Simpan Draf & Kirim Validasi -->
+            <!-- Tombol Aksi Simpan Draft & Kirim Validasi -->
             <div class="flex items-center gap-3">
-                <!-- Simpan Draf -->
+                <!-- Simpan Draft -->
                 <button type="button" 
                         onclick="submitDenganStatus('draft')" 
                         class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow">
-                    Simpan Draf
+                    Simpan Draft
                 </button>
 
                 <!-- Kirim untuk Validasi -->
@@ -74,7 +74,7 @@
         @endif
 
         <!-- Form Utama (Single Card Tanpa Status Dokumen Duplikat) -->
-        <div class="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 border border-gray-100 shadow-sm space-y-8 max-w-4xl">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 border border-gray-100 shadow-sm space-y-8">
             
             <!-- BAGIAN 1: Informasi Pertanyaan (Gambar 4) -->
             <div class="space-y-5">
@@ -199,7 +199,7 @@
                 <button type="button" 
                         onclick="submitDenganStatus('draft')" 
                         class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow text-center">
-                    Simpan Draf
+                    Simpan Draft
                 </button>
                 <button type="button" 
                         onclick="submitDenganStatus('menunggu_validasi')" 
@@ -220,7 +220,7 @@
 
 @section('scripts')
 <script>
-    // Penanganan tombol Simpan Draf vs Kirim untuk Validasi
+    // Penanganan tombol Simpan Draft vs Kirim untuk Validasi
     function submitDenganStatus(statusBaru) {
         document.getElementById('input-status').value = statusBaru;
         document.getElementById('form-pengetahuan').submit();
