@@ -4,7 +4,7 @@
 @section('page_title', 'Buat Pengetahuan Baru')
 
 @section('content')
-<div class="space-y-6 max-w-4xl">
+<div class="space-y-6 w-full">
 
     <!-- Form Pembungkus Utama -->
     <form id="form-pengetahuan" action="{{ route('superadmin.pertanyaan.store') }}" method="POST">

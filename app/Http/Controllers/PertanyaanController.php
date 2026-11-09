@@ -44,27 +44,13 @@ class PertanyaanController extends Controller
         $pertanyaans = $query->paginate(10)->withQueryString();
         $kategoris = Kategori::orderBy('nama_kategori')->get();
 
-        // Statistik ringkasan untuk dashboard
-        $totalSemua = Pertanyaan::count();
-        $totalMenunggu = Pertanyaan::where('status', 'menunggu_validasi')->count();
-        $totalDisetujui = Pertanyaan::where('status', 'disetujui')->count();
-        $totalDitolak = Pertanyaan::where('status', 'ditolak')->count();
-
-        //ambil ID Data Entry yang sedang login
         $userId = session('user.id');
+        $queryStat = Pertanyaan::where('user_id', $userId);
 
-        //ambil pertanyaan milik Data Entry tersebut
-        $query = Pertanyaan::where('user_id', $userId);
-
-        //hitung total seluruhnya
-        $totalSemua = (clone $query)->count();
-
-        //hitung pertanyaan yang menunggu validasi, disetuji, dan ditolaks
-        $totalMenunggu = (clone $query)->where('status', 'menunggu_validasi')->count();
-
-        $totalDisetujui = (clone $query)->where('status', 'disetujui')->count();
-
-        $totalDitolak = (clone $query)->where('status', 'ditolak')->count();
+        $totalSemua     = (clone $queryStat)->count();
+        $totalMenunggu  = (clone $queryStat)->where('status', 'menunggu_validasi')->count();
+        $totalDisetujui = (clone $queryStat)->where('status', 'disetujui')->count();
+        $totalDitolak   = (clone $queryStat)->where('status', 'ditolak')->count();
 
         return view('pertanyaan.index', compact(
             'pertanyaans',
@@ -96,7 +82,7 @@ class PertanyaanController extends Controller
             'kategori_id' => 'required|exists:kategoris,id',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:draft,menunggu_validasi,disetujui,ditolak',
+            'status' => 'required|in:draft,menunggu_validasi',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [
@@ -132,7 +118,11 @@ class PertanyaanController extends Controller
         }
         $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
 
-        return redirect()->route('pertanyaan.index')->with('sukses', 'Pertanyaan baru berhasil ditambahkan!');
+        $pesan = $validated['status'] === 'draft'
+        ? 'Pertanyaan berhasil disimpan sebagai draft.'
+        : 'Pertanyaan berhasil dikirim dan menunggu validasi.';
+
+        return redirect()->route('pertanyaan.index')->with('sukses', $pesan);
     }
 
     /**
@@ -140,7 +130,10 @@ class PertanyaanController extends Controller
      */
     public function show($id)
     {
-        $pertanyaan = Pertanyaan::with(['kategori', 'user'])->findOrFail($id);
+        $pertanyaan = Pertanyaan::with(['kategori', 'user'])
+            ->where('user_id', session('user.id'))
+            ->findOrFail($id);
+
         return view('pertanyaan.show', compact('pertanyaan'));
     }
 
@@ -169,7 +162,7 @@ class PertanyaanController extends Controller
             'kategori_id' => 'required|exists:kategoris,id',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:draft,menunggu_validasi,disetujui,ditolak',
+            'status' => 'required|in:draft,menunggu_validasi',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [

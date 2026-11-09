@@ -200,7 +200,7 @@
                 <select name="status" 
                         class="w-full px-3 py-2 bg-white rounded-xl border border-gray-200 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition">
                     <option value="">Semua Status</option>
-                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draf</option>
+                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="menunggu_validasi" {{ request('status') == 'menunggu_validasi' ? 'selected' : '' }}>Menunggu Validasi</option>
                     <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Diterbitkan</option>
                     <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Revisi / Ditolak</option>
@@ -274,7 +274,7 @@
                                 @else
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                         <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                        Draf
+                                        Draft
                                     </span>
                                 @endif
                             </td>

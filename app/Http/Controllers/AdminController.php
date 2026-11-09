@@ -17,10 +17,22 @@ class AdminController extends Controller
     // ==========================================
     public function pertanyaanIndex(Request $request)
     {
-        // Hanya tampilkan pertanyaan yang sudah divalidasi oleh validator (status = disetujui)
-        $query = Pertanyaan::with(['kategori', 'user'])
-            ->where('status', 'disetujui')
+        $userId = session('user.id');
+
+        // Hanya: (a) semua yang disetujui, (b) draf milik super admin ini
+        $query = Pertanyaan::with(['kategori', 'user', 'tags'])
+            ->where(function ($q) use ($userId) {
+                $q->where('status', 'disetujui')
+                ->orWhere(function ($q2) use ($userId) {
+                    $q2->where('status', 'draft')
+                        ->where('user_id', $userId);
+                });
+            })
             ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
         if ($request->filled('kategori_id')) {
             $query->where('kategori_id', $request->kategori_id);
@@ -30,13 +42,13 @@ class AdminController extends Controller
             $searchTerm = trim($request->q);
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
-                  ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('user', function ($uq) use ($searchTerm) {
-                      $uq->where('name', 'like', "%{$searchTerm}%");
-                  })
-                  ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
-                      $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
-                  });
+                ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
+                ->orWhereHas('user', function ($uq) use ($searchTerm) {
+                    $uq->where('name', 'like', "%{$searchTerm}%");
+                })
+                ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
+                    $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
+                });
             });
         }
 
