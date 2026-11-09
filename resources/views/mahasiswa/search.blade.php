@@ -24,8 +24,8 @@
 @else
     @foreach ($hasil as $item)
         <div class="faq-item">
-            <h3>{{ $item->pertanyaan }}</h3>
-            <p>{{ $item->jawaban }}</p>
+            <h3>{{ $item->judul_pertanyaan }}</h3>
+            <p>{{ $item->isi_jawaban }}</p>
         </div>
     @endforeach
 @endif

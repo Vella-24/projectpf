@@ -140,15 +140,30 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
-            // 'users' => [
-            //     'filterableAttributes' => ['id', 'name', 'email'],
-            //     'embedders' => [
-            //         'default' => [
-            //             'source' => 'userProvided',
-            //             'dimensions' => 1536,
-            //         ],
-            //     ],
-            // ],
+            \App\Models\Pertanyaan::class => [
+                'filterableAttributes' => ['kategori_id', 'status'],
+                'searchableAttributes' => [
+                    'judul_pertanyaan',
+                    'isi_jawaban',
+                    'tags',
+                    'kategori_nama',
+                ],
+                'rankingRules' => [
+                    'words',
+                    'typo',
+                    'proximity',
+                    'attribute',
+                    'sort',
+                    'exactness',
+                ],
+                'typoTolerance' => [
+                    'enabled' => true,
+                    'minWordSizeForTypos' => [
+                        'oneTypo' => 3,
+                        'twoTypos' => 7,
+                    ],
+                ],
+            ],
         ],
         'model-settings' => [
             // User::class => [

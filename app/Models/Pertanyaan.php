@@ -50,12 +50,16 @@ class Pertanyaan extends Model
 
     public function toSearchableArray(): array
     {
+        $this->loadMissing(['kategori', 'tags']);
+
         return [
-            'id' => $this->id,
-            'judul_pertanyaan' => $this->judul_pertanyaan,
-            'isi_jawaban' => $this->isi_jawaban,
-            'kategori_id' => $this->kategori_id,
-            'status' => $this->status,
+            'id' => (int) $this->id,
+            'judul_pertanyaan' => (string) $this->judul_pertanyaan,
+            'isi_jawaban' => (string) $this->isi_jawaban,
+            'kategori_id' => (int) $this->kategori_id,
+            'kategori_nama' => (string) ($this->kategori->nama_kategori ?? ''),
+            'tags' => $this->tags ? $this->tags->pluck('nama_tag')->implode(' ') : '',
+            'status' => (string) $this->status,
         ];
     }
 

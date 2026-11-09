@@ -117,6 +117,7 @@ class PertanyaanController extends Controller
             $idTags[] = $tag->id;
         }
         $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
+        $pertanyaan->searchable();
 
         $pesan = $validated['status'] === 'draft'
         ? 'Pertanyaan berhasil disimpan sebagai draft.'
@@ -200,6 +201,7 @@ class PertanyaanController extends Controller
 
         //ini bwat hubungkan pertanyaan dengan tag yang dipilih
         $pertanyaan->tags()->sync($idTags);
+        $pertanyaan->searchable();
 
         //ini bwat klo cari tag lama yang sudah dilepas dari pertanyaan ini
         $tagDihapus = array_diff($tagLama, $idTags);
@@ -244,45 +246,81 @@ class PertanyaanController extends Controller
 
     public function indexMahasiswa(Request $request)
     {
-        $query = Pertanyaan::with(['kategori', 'user'])->latest();
+        $kategoris = Kategori::withCount(['pertanyaans' => function ($q) {
+            $q->where('status', 'disetujui');
+        }])->orderBy('nama_kategori')->get();
 
-        // Mahasiswa hanya melihat pertanyaan yang sudah disetujui (publish)
-        $query->where('status', 'disetujui');
-
-        // Filter berdasarkan kategori jika dipilih
-        if ($request->filled('kategori_id')) {
-            $query->where('kategori_id', $request->kategori_id);
-        }
-
-        // Pencarian kata kunci pada judul pertanyaan atau jawaban
+        // Jika terdapat pencarian kata kunci, gunakan Meilisearch melalui Laravel Scout
         if ($request->filled('q')) {
-            $searchTerm = $request->q;
+            $searchTerm = trim($request->q);
 
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
-                ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
-                ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
-                    $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
+            try {
+                $scoutQuery = Pertanyaan::search($searchTerm);
+
+                if ($request->filled('kategori_id')) {
+                    $scoutQuery->where('kategori_id', (int) $request->kategori_id);
+                }
+
+                $pertanyaans = $scoutQuery->query(function ($query) {
+                    $query->with(['kategori', 'user', 'tags'])
+                        ->where('status', 'disetujui');
+                })->paginate(10)->withQueryString();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Meilisearch search error, falling back to database: ' . $e->getMessage());
+
+                $query = Pertanyaan::with(['kategori', 'user', 'tags'])->latest();
+                $query->where('status', 'disetujui');
+
+                if ($request->filled('kategori_id')) {
+                    $query->where('kategori_id', $request->kategori_id);
+                }
+
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
+                    ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('tags', function ($tagQuery) use ($searchTerm) {
+                        $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
+                    });
                 });
-            });
-        }
 
-        $pertanyaans = $query->paginate(10)->withQueryString();
-        $kategoris = Kategori::orderBy('nama_kategori')->get();
+                $pertanyaans = $query->paginate(10)->withQueryString();
+            }
+        } else {
+            $query = Pertanyaan::with(['kategori', 'user', 'tags'])->latest();
+            $query->where('status', 'disetujui');
+
+            if ($request->filled('kategori_id')) {
+                $query->where('kategori_id', $request->kategori_id);
+            }
+
+            $pertanyaans = $query->paginate(10)->withQueryString();
+        }
 
         return view('mahasiswa.index', compact('pertanyaans', 'kategoris'));
     }
 
     public function search(Request $request)
-{
-    $request->validate([
-        'q' => 'required|string|max:255',
-    ]);
+    {
+        $request->validate([
+            'q' => 'required|string|max:255',
+        ]);
 
-    $keyword = trim($request->q);
+        $keyword = trim($request->q);
 
-    $hasil = Pertanyaan::search($keyword)->get();
+        try {
+            $hasil = Pertanyaan::search($keyword)->query(function ($query) {
+                $query->with(['kategori', 'user', 'tags'])->where('status', 'disetujui');
+            })->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Meilisearch search error: ' . $e->getMessage());
+            $hasil = Pertanyaan::with(['kategori', 'user', 'tags'])
+                ->where('status', 'disetujui')
+                ->where(function ($q) use ($keyword) {
+                    $q->where('judul_pertanyaan', 'like', "%{$keyword}%")
+                    ->orWhere('isi_jawaban', 'like', "%{$keyword}%");
+                })->get();
+        }
 
-    return view('mahasiswa.search', compact('hasil', 'keyword'));
-}
+        return view('mahasiswa.search', compact('hasil', 'keyword'));
+    }
 }

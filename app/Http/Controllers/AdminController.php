@@ -99,6 +99,7 @@ class AdminController extends Controller
         }
 
         $pertanyaan->tags()->sync(array_unique($idTags));
+        $pertanyaan->searchable();
 
         $pesan = $validated['status'] === 'disetujui'
             ? 'Pertanyaan baru berhasil dibuat dan langsung dipublikasikan ke halaman mahasiswa!'
@@ -147,6 +148,7 @@ class AdminController extends Controller
 
         $idTags = array_unique($idTags);
         $pertanyaan->tags()->sync($idTags);
+        $pertanyaan->searchable();
 
         // Hapus tag yang tidak lagi digunakan
         $tagDihapus = array_diff($tagLama, $idTags);
