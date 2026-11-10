@@ -412,13 +412,17 @@
                                                 </svg>
                                                 <span>Ya</span>
                                             </button>
-                                            <button 
+                                            <a href="{{ route('mahasiswa.pertanyaanLanjutan.create', $item->id) }}"
+                                            class="feedback-btn-no px-3 py-1 rounded-full border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white text-xs font-semibold transition shadow-2xs">
+                                                Tidak
+                                            </a>
+                                            <!-- <button 
                                                 type="button" 
                                                 onclick="submitFeedback('{{ $item->id }}', 'no')" 
                                                 class="feedback-btn-no px-3 py-1 rounded-full border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-white text-xs font-semibold transition shadow-2xs"
                                             >
                                                 Tidak
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
                                 </div>

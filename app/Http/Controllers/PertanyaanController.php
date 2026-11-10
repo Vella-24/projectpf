@@ -14,6 +14,10 @@ class PertanyaanController extends Controller
      */
     public function index(Request $request)
     {
+        if (session('user.role') !== 'data_entry') {
+            abort(403);
+        }
+
         $query = Pertanyaan::with(['kategori', 'user'])
         ->where('user_id', session('user.id'))
         ->latest();

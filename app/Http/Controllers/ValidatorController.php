@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pertanyaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ValidatorController extends Controller
 {
@@ -14,7 +15,11 @@ class ValidatorController extends Controller
     {
         $status = $request->get('status', 'menunggu_validasi');
 
-        $query = Pertanyaan::with(['kategori', 'user'])->latest();
+        $query = Pertanyaan::with([
+            'kategori',
+            'user',
+            'validator'
+        ])->latest();
 
         if ($status === 'semua') {
             $query->whereIn('status', ['menunggu_validasi', 'disetujui', 'ditolak']);
@@ -60,6 +65,15 @@ class ValidatorController extends Controller
     {
         $pertanyaan = Pertanyaan::findOrFail($id);
 
+        // Pastikan hanya Validator yang mengambil pertanyaan
+        // yang boleh memberikan keputusan
+        if ($pertanyaan->validator_id != session('user.id')) {
+            return back()->with(
+                'error',
+                'Kamu tidak memiliki akses untuk memvalidasi pertanyaan ini.'
+            );
+        }
+
         $validated = $request->validate([
             'status' => 'required|in:disetujui,ditolak',
             'catatan_validator' => 'nullable|string|max:1000',
@@ -70,9 +84,75 @@ class ValidatorController extends Controller
             'catatan_validator' => $validated['catatan_validator'],
         ]);
 
+        // Jika FAQ berasal dari pertanyaan lanjutan mahasiswa
+        if ($validated['status'] === 'disetujui') {
+            \App\Models\PertanyaanLanjutan::where(
+                'faq_baru_id',
+                $pertanyaan->id
+            )->where('status', 'sedang_ditangani')
+            ->update([
+                'status' => 'dijawab'
+            ]);
+        }
+
         $statusText = $validated['status'] === 'disetujui' ? 'disetujui' : 'ditolak';
 
         $redirectStatus = $request->input('redirect_status', 'menunggu_validasi');
         return redirect()->route('validator.index', ['status' => $redirectStatus])->with('sukses', "Pertanyaan berhasil {$statusText}!");
+    }
+
+    public function ambilReview(Request $request, $id)
+    {
+        if (session('user.role') !== 'validator') {
+            abort(403);
+        }
+
+        $userId = session('user.id');
+
+        $hasil = DB::transaction(function () use ($id, $userId) {
+
+            $pertanyaan = Pertanyaan::where('id', $id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($pertanyaan->status !== 'menunggu_validasi') {
+                return 'selesai';
+            }
+
+            // Sudah diambil Validator lain
+            if (
+                $pertanyaan->validator_id !== null &&
+                (int) $pertanyaan->validator_id !== (int) $userId
+            ) {
+                return 'diambil_orang_lain';
+            }
+
+            // Belum diambil siapa pun
+            if ($pertanyaan->validator_id === null) {
+                $pertanyaan->update([
+                    'validator_id' => $userId,
+                    'review_diambil_pada' => now(),
+                ]);
+            }
+
+            return 'berhasil';
+        });
+
+        if ($hasil !== 'berhasil') {
+            return back()->with(
+                'error',
+                $hasil === 'selesai'
+                    ? 'FAQ ini sudah selesai divalidasi.'
+                    : 'FAQ sedang direview oleh Validator lain.'
+            );
+        }
+
+        return redirect()
+            ->route('validator.index', [
+                'status' => 'menunggu_validasi',
+                'page' => max(1, (int) $request->input('page', 1)),
+                'selected' => $id,
+            ])
+            ->with('sukses', 'FAQ berhasil diambil. Silakan lakukan review.');
     }
 }

@@ -24,6 +24,11 @@
             'judul' => $p->judul_pertanyaan,
             'jawaban' => $p->isi_jawaban,
             'status' => $p->status,
+            'validator_id' => $p->validator_id,
+            'validator_name' => $p->validator->name ?? null,
+            'boleh_review' => $p->status === 'menunggu_validasi'
+            && $p->validator_id !== null
+            && (int) $p->validator_id === (int) session('user.id'),
             'status_label' => $p->status === 'menunggu_validasi' ? 'Menunggu' : ($p->status === 'disetujui' ? 'Disetujui' : ($p->status === 'ditolak' ? 'Perlu Revisi' : ucwords(str_replace('_', ' ', $p->status)))),
             'user' => $authorName,
             'catatan' => $p->catatan_validator ?? '',
@@ -32,7 +37,10 @@
         ];
     })->values();
 
-    $firstItem = $pertanyaanItems->first();
+    $selectedId = (int) request('selected', 0);
+
+    $firstItem = $pertanyaanItems->firstWhere('id', $selectedId)
+        ?? $pertanyaanItems->first();
 @endphp
 
 @section('content')
@@ -92,7 +100,7 @@
                      data-judul="{{ strtolower($item['judul']) }}"
                      data-kategori="{{ strtolower($item['kategori']) }}"
                      data-user="{{ strtolower($item['user']) }}"
-                     class="pertanyaan-card cursor-pointer p-4 rounded-xl transition-all duration-200 border {{ $index === 0 ? 'bg-[#FFF5F6] border-l-4 border-l-[#741228] border-t-rose-100 border-r-rose-100 border-b-rose-100 shadow-2xs' : 'bg-white hover:bg-gray-50/80 border-gray-100' }}">
+                     class="pertanyaan-card cursor-pointer p-4 rounded-xl transition-all duration-200 border {{ $firstItem && $firstItem['id'] == $item['id'] ? 'bg-[#FFF5F6] border-l-4 border-l-[#741228] border-t-rose-100 border-r-rose-100 border-b-rose-100 shadow-2xs' : 'bg-white hover:bg-gray-50/80 border-gray-100' }}">
                     
                     <!-- Top Meta: Status pill & Time -->
                     <div class="flex items-center justify-between mb-1.5">
@@ -112,6 +120,38 @@
                     <p class="text-xs text-gray-400 truncate">
                         {{ $item['kategori'] }} &bull; oleh <span class="text-gray-600">{{ $item['user'] }}</span>
                     </p>
+                    <!-- Informasi Validator yang mengambil review -->
+                    <div class="mt-2">
+
+                        @if ($item['validator_id'] == null)
+
+                            <span class="text-xs text-amber-600 font-semibold">
+                                Belum direview
+                            </span>
+
+                            <form action="{{ route('validator.ambilReview', $item['id']) }}"
+                                method="POST"
+                                class="mt-2"
+                                onclick="event.stopPropagation()">
+
+                                @csrf
+                                <input type="hidden" name="page" value="{{ $pertanyaans->currentPage() }}">
+                                <button type="submit"
+                                        class="text-xs font-bold text-white bg-[#741228] px-3 py-1.5 rounded-lg hover:bg-[#5e0d1f]">
+                                    Ambil untuk Direview
+                                </button>
+
+                            </form>
+
+                        @else
+
+                            <span class="text-xs text-blue-600 font-semibold">
+                                Sedang direview oleh {{ $item['validator_name'] ?? 'Validator' }}
+                            </span>
+
+                        @endif
+
+                    </div>
                 </div>
                 @empty
                 <div class="text-center py-12 px-4 text-gray-400">
@@ -173,6 +213,9 @@
                 Diajukan oleh <span class="text-gray-700 font-medium">{{ $firstItem['user'] }}</span> &bull; {{ $firstItem['waktu'] }}
             </p>
 
+            <!-- Informasi siapa yang mengambil review -->
+            <div id="detailValidatorInfo" class="mb-5 text-sm"></div>
+
             <!-- Section: Jawaban Yang Diajukan -->
             <div class="mb-6">
                 <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
@@ -183,8 +226,12 @@
                 </div>
             </div>
 
+            <!-- Keterangan status kepemilikan review -->
+            <div id="detailValidatorInfo"
+                class="mb-5 text-sm font-semibold text-amber-600">
+            </div>
             <!-- Form Keputusan Validator (Menggunakan Route updateStatus yang ada) -->
-            <form id="formReview" action="{{ $firstItem['update_url'] }}" method="POST">
+            <form id="formReview" action="{{ $firstItem['update_url'] }}" method="POST" class="hidden">
                 @csrf
                 @method('PUT')
                 
@@ -203,7 +250,7 @@
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center justify-end gap-3 pt-2">
+                <div id="decisionButtons" class="flex items-center justify-end gap-3 pt-2">
                     <!-- Button Minta Revisi (Ditolak) -->
                     <button type="button" onclick="submitDecision('ditolak')"
                             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#FFF1F2] text-[#9F1239] hover:bg-[#FFE4E6] border border-[#FECDD3] transition cursor-pointer shadow-2xs">
@@ -222,6 +269,9 @@
                         <span>Setujui & Terbitkan</span>
                     </button>
                 </div>
+                <p id="reviewWarning" class="hidden text-sm text-amber-700 mt-3">
+                    Kamu tidak dapat memvalidasi pertanyaan ini karena sedang direview oleh Validator lain.
+                </p>
             </form>
             @else
             <!-- Placeholder saat tidak ada data -->
@@ -244,7 +294,10 @@
 <script>
     // Data pertanyaan dari backend
     const items = @json($pertanyaanItems);
-    let activeId = items.length > 0 ? items[0].id : null;
+    let activeId = @json($firstItem['id'] ?? null);
+
+    // ID Validator yang sedang login
+    const currentValidatorId = @json(session('user.id'));
 
     // Pilih item untuk ditampilkan di kolom detail kanan
     function selectItem(id) {
@@ -272,7 +325,57 @@
         if (elCatatan) elCatatan.value = item.catatan || '';
 
         const formReview = document.getElementById('formReview');
-        if (formReview) formReview.action = item.update_url;
+        const validatorInfo = document.getElementById('detailValidatorInfo');
+
+        // Cek apakah FAQ sudah diambil oleh Validator yang login
+        const bolehReview = item.boleh_review === true;
+        
+
+        // Atur form sesuai FAQ yang diklik
+        if (formReview) {
+            formReview.action = item.update_url;
+
+            // Sembunyikan seluruh form jika belum mengambil review
+            formReview.classList.toggle('hidden', item.boleh_review !== true);
+        }
+
+        // Tampilkan informasi status review
+        if (validatorInfo) {
+
+            if (item.status !== 'menunggu_validasi') {
+
+                validatorInfo.textContent =
+                    'FAQ ini sudah selesai divalidasi.';
+
+                validatorInfo.className =
+                    'mb-5 text-sm font-semibold text-gray-500';
+
+            } else if (bolehReview) {
+
+                validatorInfo.textContent =
+                    'Kamu sedang mereview pertanyaan ini.';
+
+                validatorInfo.className =
+                    'mb-5 text-sm font-semibold text-emerald-600';
+
+            } else if (item.validator_id != null) {
+
+                validatorInfo.textContent =
+                    'Sedang direview oleh ' +
+                    (item.validator_name || 'Validator');
+
+                validatorInfo.className =
+                    'mb-5 text-sm font-semibold text-blue-600';
+
+            } else {
+
+                validatorInfo.textContent =
+                    'Belum ada Validator yang mengambil review. Klik Ambil untuk Direview terlebih dahulu.';
+
+                validatorInfo.className =
+                    'mb-5 text-sm font-semibold text-amber-600';
+            }
+        }
 
         // Status Badge styling
         const badge = document.getElementById('detailStatusBadge');
@@ -305,6 +408,13 @@
 
     // Submit form review keputusan
     function submitDecision(status) {
+        const itemAktif = items.find(i => i.id === activeId);
+
+        if (!itemAktif || itemAktif.boleh_review !== true) {
+            alert('Ambil pertanyaan untuk direview terlebih dahulu.');
+            return;
+        }
+
         const formReview = document.getElementById('formReview');
         if (!formReview) return;
 
@@ -378,6 +488,12 @@
         if (firstVisibleId && firstVisibleId !== activeId) {
             selectItem(firstVisibleId);
         }
+
+        
     }
+
+    if (activeId !== null) {
+            selectItem(activeId);
+        }
 </script>
 @endsection

@@ -4,6 +4,17 @@
 @section('page_title', 'Ubah Pengetahuan')
 
 @section('content')
+@if ($pertanyaan->status === 'ditolak')
+    <div class="mb-5 p-4 bg-rose-50 border border-rose-200 rounded-xl">
+        <h3 class="text-sm font-bold text-rose-800 mb-2">
+            Catatan Revisi dari Validator
+        </h3>
+
+        <p class="text-sm text-rose-700 whitespace-pre-line">
+            {{ $pertanyaan->catatan_validator ?: 'Belum ada catatan revisi.' }}
+        </p>
+    </div>
+@endif
 <div class="space-y-6 pt-2">
 
     <!-- Form Pembungkus Utama -->

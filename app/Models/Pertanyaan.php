@@ -19,6 +19,8 @@ class Pertanyaan extends Model
         'isi_jawaban',
         'status',
         'catatan_validator',
+        'validator_id',
+        'review_diambil_pada',
     ];
 
     /**
@@ -48,6 +50,19 @@ class Pertanyaan extends Model
         );
     }
 
+    public function pertanyaanLanjutans()
+    {
+        return $this->hasMany(
+            PertanyaanLanjutan::class,
+            'pertanyaan_id'
+        );
+    }
+    
+    public function validator()
+    {
+        return $this->belongsTo(User::class, 'validator_id');
+    }
+
     public function toSearchableArray(): array
     {
         $this->loadMissing(['kategori', 'tags']);
@@ -66,5 +81,13 @@ class Pertanyaan extends Model
     public function shouldBeSearchable(): bool
     {
         return $this->status === 'disetujui';
+    }
+
+    public function sumberPertanyaanLanjutan()
+    {
+        return $this->hasOne(
+            PertanyaanLanjutan::class,
+            'faq_baru_id'
+        );
     }
 }
