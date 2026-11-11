@@ -48,21 +48,39 @@ class PertanyaanLanjutanController extends Controller
     }
 
     // Menampilkan semua antrean pertanyaan mahasiswa
-    public function index()
+    public function index(Request $request)
     {
         // Hanya Data Entry yang boleh membuka halaman
         if (session('user.role') !== 'data_entry') {
             abort(403);
         }
 
-        // Daftar seluruh pertanyaan lanjutan
-        $pertanyaans = PertanyaanLanjutan::with([
+        $query = PertanyaanLanjutan::with([
             'pertanyaan',
             'dataEntry',
             'faqBaru'
         ])
-        ->latest()
-        ->paginate(10);
+        ->latest();
+
+        // Filter berdasarkan status jika dipilih
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Pencarian kata kunci jika ada
+        if ($request->filled('q')) {
+            $searchTerm = trim($request->q);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('isi_pertanyaan', 'like', "%{$searchTerm}%")
+                  ->orWhere('email_mahasiswa', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('pertanyaan', function ($faqQuery) use ($searchTerm) {
+                      $faqQuery->where('judul_pertanyaan', 'like', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // Daftar seluruh pertanyaan lanjutan
+        $pertanyaans = $query->paginate(10)->withQueryString();
 
         // Statistik seluruh pertanyaan mahasiswa
         $totalPertanyaan = PertanyaanLanjutan::count();
@@ -74,13 +92,19 @@ class PertanyaanLanjutanController extends Controller
             'sedang_ditangani'
         )->count();
 
+        $totalDijawab = PertanyaanLanjutan::where(
+            'status',
+            'dijawab'
+        )->count();
+
         return view(
             'pertanyaan-lanjutan.index',
             compact(
                 'pertanyaans',
                 'totalPertanyaan',
                 'totalBaru',
-                'totalDiproses'
+                'totalDiproses',
+                'totalDijawab'
             )
         );
     }
