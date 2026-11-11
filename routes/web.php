@@ -10,13 +10,29 @@ use App\Http\Controllers\PertanyaanLanjutanController;
 use App\Http\Middleware\CheckRole;
 
 // Redirect halaman utama ke daftar pertanyaan Data Entry
-// Route::get('/', function () {
-//     return redirect()->route('mahasiswa.index');
-// });
-
 Route::get('/', [PertanyaanController::class, 'indexMahasiswa'])->name('mahasiswa.index');
 
-Route::get('/staff', [PertanyaanController::class, 'index'])->name('pertanyaan.index');
+// Route Data Entry
+Route::prefix('staff')->middleware(CheckRole::class . ':data_entry')->group(function () {
+
+    // Dashboard Data Entry
+    Route::get('/', [PertanyaanController::class, 'index'])->name('pertanyaan.index');
+
+    // CRUD Pertanyaan
+    Route::resource('pertanyaan', PertanyaanController::class)->except(['index']);
+
+    // Daftar pertanyaan lanjutan
+    Route::get('/pertanyaan-lanjutan', [PertanyaanLanjutanController::class, 'index'])->name('pertanyaanLanjutan.index');
+
+    // Mengambil pertanyaan lanjutan
+    Route::post('/pertanyaan-lanjutan/{id}/ambil', [PertanyaanLanjutanController::class, 'ambil'])->name('pertanyaanLanjutan.ambil');
+
+    // Halaman menjawab pertanyaan lanjutan
+    Route::get('/pertanyaan-lanjutan/{id}/jawab', [PertanyaanLanjutanController::class, 'jawab'])->name('pertanyaanLanjutan.jawab');
+
+    // Menyimpan jawaban
+    Route::post('/pertanyaan-lanjutan/{id}/jawab', [PertanyaanLanjutanController::class, 'simpanJawaban'])->name('pertanyaanLanjutan.simpanJawaban');
+});
 
 Route::get('/login', [LoginController::class, 'login']);
 
@@ -76,24 +92,26 @@ Route::post(
 )->name('mahasiswa.pertanyaanLanjutan.store');
 
 //route data entry
-Route::get(
-    '/pertanyaan-lanjutan',
-    [PertanyaanLanjutanController::class, 'index']
-)->name('pertanyaanLanjutan.index');
+// Route::get(
+//     '/pertanyaan-lanjutan',
+//     [PertanyaanLanjutanController::class, 'index']
+// )->name('pertanyaanLanjutan.index');
 
-Route::post(
-    '/pertanyaan-lanjutan/{id}/ambil',
-    [PertanyaanLanjutanController::class, 'ambil']
-)->name('pertanyaanLanjutan.ambil');
+// Route::post(
+//     '/pertanyaan-lanjutan/{id}/ambil',
+//     [PertanyaanLanjutanController::class, 'ambil']
+// )->name('pertanyaanLanjutan.ambil');
 
-// Halaman Data Entry menuliskan jawaban
-Route::get(
-    '/pertanyaan-lanjutan/{id}/jawab',
-    [PertanyaanLanjutanController::class, 'jawab']
-)->name('pertanyaanLanjutan.jawab');
+// // Halaman Data Entry menuliskan jawaban
+// Route::get(
+//     '/pertanyaan-lanjutan/{id}/jawab',
+//     [PertanyaanLanjutanController::class, 'jawab']
+// )->name('pertanyaanLanjutan.jawab');
 
-// Menyimpan draft atau mengirim jawaban ke Validator
-Route::post(
-    '/pertanyaan-lanjutan/{id}/jawab',
-    [PertanyaanLanjutanController::class, 'simpanJawaban']
-)->name('pertanyaanLanjutan.simpanJawaban');
+// // Menyimpan draft atau mengirim jawaban ke Validator
+// Route::post(
+//     '/pertanyaan-lanjutan/{id}/jawab',
+//     [PertanyaanLanjutanController::class, 'simpanJawaban']
+// )->name('pertanyaanLanjutan.simpanJawaban');
+
+// Route::get('/staff', [PertanyaanController::class, 'index'])->name('pertanyaan.index');

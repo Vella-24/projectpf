@@ -11,7 +11,20 @@ class LoginController extends Controller
 {
     public function login()
     {
+        if (session()->has('user')) {
+            $role = session('user.role');
+
+            if ($role === 'validator') {
+                return redirect()->route('validator.index');
+            } elseif ($role === 'super_admin') {
+                return redirect()->route('superadmin.index');
+            } elseif ($role === 'data_entry') {
+                return redirect()->route('pertanyaan.index');
+            }
+        }
+
         return view('auth.login');
+        // supaya kalau habis login, gak bisa kembali ke halaman login, jadi nya kalo buak tab baru langsung ke buka sesuai dengan role nya yang sedang login
     }
 
     public function prosesLogin(Request $request)
@@ -20,6 +33,13 @@ class LoginController extends Controller
             'email' => 'required',
             'password' => 'required'
         ]);
+
+        // if (session()->has('user')) {
+        //     return back()->with(
+        //         'error',
+        //         'Anda sudah login. Silakan logout terlebih dahulu!'
+        //     );
+        // }
 
         $user = DB::table('users')
             ->where('email', $request->email)
@@ -62,11 +82,7 @@ class LoginController extends Controller
         }
         elseif ($user->role === 'data_entry') {
             return redirect()->route('pertanyaan.index');
-        }
-
-
-
-        
+        };
     }
 
     public function logout()
