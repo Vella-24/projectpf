@@ -25,6 +25,25 @@
         </div>
     </div>
 
+    <!-- Flash Messages -->
+    @if(session('sukses'))
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs mb-6">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-semibold">{{ session('sukses') }}</span>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3.5 rounded-2xl text-xs sm:text-sm flex items-center gap-2.5 shadow-2xs mb-6">
+            <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
+            </svg>
+            <span class="font-semibold">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <!-- Filter & Pencarian Bar -->
     <div class="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-sm">
         <form action="{{ route('superadmin.pertanyaan.index') }}" method="GET" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">

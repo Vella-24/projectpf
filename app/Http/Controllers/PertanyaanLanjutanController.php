@@ -315,4 +315,24 @@ class PertanyaanLanjutanController extends Controller
             );
     }
 
+    /**
+     * Menutup pertanyaan lanjutan karena jawaban FAQ asal sudah cukup jelas.
+     */
+    public function tutup($id)
+    {
+        if (session('user.role') !== 'data_entry') {
+            abort(403);
+        }
+
+        $tugas = PertanyaanLanjutan::where('data_entry_id', session('user.id'))
+            ->where('status', 'sedang_ditangani')
+            ->findOrFail($id);
+
+        $tugas->update(['status' => 'ditutup']);
+
+        return redirect()
+            ->route('pertanyaanLanjutan.index')
+            ->with('sukses', 'Pertanyaan berhasil ditutup. Jawaban FAQ asal dianggap sudah mencukupi.');
+    }
+
 }

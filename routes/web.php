@@ -32,6 +32,9 @@ Route::prefix('staff')->middleware(CheckRole::class . ':data_entry')->group(func
 
     // Menyimpan jawaban
     Route::post('/pertanyaan-lanjutan/{id}/jawab', [PertanyaanLanjutanController::class, 'simpanJawaban'])->name('pertanyaanLanjutan.simpanJawaban');
+
+    // Menutup pertanyaan lanjutan (jawaban FAQ asal sudah cukup)
+    Route::patch('/pertanyaan-lanjutan/{id}/tutup', [PertanyaanLanjutanController::class, 'tutup'])->name('pertanyaanLanjutan.tutup');
 });
 
 Route::get('/login', [LoginController::class, 'login']);

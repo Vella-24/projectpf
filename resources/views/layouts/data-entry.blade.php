@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'ASK UBAYA - Data Entry')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,14 +86,7 @@
             <div>
                 <!-- Brand Logo ASK UBAYA -->
                 <div class="flex items-center gap-3 px-2 py-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 shadow-sm">
-                        <!-- Graduation Cap Icon -->
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14t1.5 2 1.5 4" />
-                        </svg>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-10 h-10 rounded-xl shadow-md shrink-0">
                     <div>
                         <h1 class="text-base font-extrabold tracking-wide text-white leading-tight">ASK UBAYA</h1>
                         <p class="text-[10px] tracking-wider text-rose-200/60 font-semibold uppercase">STUDENT KNOWLEDGE</p>
@@ -206,42 +201,6 @@
                 </div>
             </div>
         </header>
-
-        <!-- Flash Messages -->
-        <div class="px-4 sm:px-6 lg:px-8 pt-4">
-            @if(session('sukses'))
-                <div id="toastSuccess" class="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-sm mb-4 transition-all">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span class="text-sm font-medium">{{ session('sukses') }}</span>
-                    </div>
-                    <button onclick="document.getElementById('toastSuccess').remove()" class="text-emerald-500 hover:text-emerald-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div id="toastError" class="flex items-center justify-between gap-3 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl shadow-sm mb-4 transition-all">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="9" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
-                        </svg>
-                        <span class="text-sm font-medium">{{ session('error') }}</span>
-                    </div>
-                    <button onclick="document.getElementById('toastError').remove()" class="text-rose-500 hover:text-rose-700">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            @endif
-        </div>
 
         <!-- Main Body Content -->
         <main class="flex-1 px-4 sm:px-6 lg:px-8 pb-12">

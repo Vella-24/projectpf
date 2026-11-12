@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Ajukan Pertanyaan - ASK UBAYA</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     <style>
         * {
@@ -145,7 +147,8 @@
     <div class="form-card">
 
         <!-- HEADER -->
-        <div class="form-header">
+        <div class="form-header" style="text-align: center;">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" style="width: 48px; height: 48px; border-radius: 14px; margin: 0 auto 10px auto; display: block; box-shadow: 0 4px 12px rgba(124, 18, 36, 0.2);">
             <h1>ASK UBAYA</h1>
             <p>
                 Ajukan Pertanyaan Lebih Lanjut

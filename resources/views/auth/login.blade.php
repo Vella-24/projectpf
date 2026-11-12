@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Staf - ASK UBAYA</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     <style>
         * {
@@ -95,6 +97,9 @@
 
 <body>
     <div class="login-container">
+        <div style="display: flex; justify-content: center; margin-bottom: 16px;">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" style="width: 56px; height: 56px; border-radius: 16px; box-shadow: 0 4px 14px rgba(124, 18, 36, 0.25);">
+        </div>
         <h2>ASK UBAYA</h2>
         <p class="subtitle">Login Portal Staf</p>
 

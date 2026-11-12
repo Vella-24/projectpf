@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Validasi Konten - ASK UBAYA')</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -81,13 +83,7 @@
             <div>
                 <!-- Brand ASK UBAYA -->
                 <div class="flex items-center gap-3 px-2 py-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10 shadow-sm">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 14t1.5 2 1.5 4" />
-                        </svg>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-10 h-10 rounded-xl shadow-md shrink-0">
                     <div>
                         <h1 class="text-base font-extrabold tracking-wide text-white leading-tight">ASK UBAYA</h1>
                         <p class="text-[10px] tracking-wider text-rose-200/60 font-semibold uppercase">STUDENT KNOWLEDGE</p>
@@ -183,21 +179,6 @@
                 </div>
             </div>
         </header>
-
-        <!-- Flash Messages Toast -->
-        @if(session('sukses'))
-        <div id="flashAlert" class="w-full px-4 sm:px-6 lg:px-8 mt-4">
-            <div class="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl shadow-xs">
-                <div class="flex items-center gap-2.5">
-                    <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                    </svg>
-                    <span class="text-sm font-semibold">{{ session('sukses') }}</span>
-                </div>
-                <button onclick="document.getElementById('flashAlert').remove()" class="text-emerald-500 hover:text-emerald-700">✕</button>
-            </div>
-        </div>
-        @endif
 
         <!-- Main Content Area -->
         <main class="w-full px-4 sm:px-6 lg:px-8 py-6 flex-1">

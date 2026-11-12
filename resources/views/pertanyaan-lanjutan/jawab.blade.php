@@ -25,8 +25,11 @@
     </div>
 
     @if (session('sukses'))
-        <div class="bg-emerald-50 text-emerald-700 border border-emerald-200 p-4 rounded-xl text-sm">
-            {{ session('sukses') }}
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-5 py-4 rounded-2xl text-sm font-medium flex items-center gap-3 shadow-xs">
+            <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>{{ session('sukses') }}</span>
         </div>
     @endif
 
@@ -81,6 +84,16 @@
                     {{ $tugas->pertanyaan->kategori->nama_kategori ?? '-' }}
                 </p>
             </div>
+
+            {{-- Jawaban FAQ Asal --}}
+            @if($tugas->pertanyaan?->isi_jawaban)
+                <div class="mt-4 pt-4 border-t border-rose-100">
+                    <p class="text-xs font-bold text-[#741228] uppercase mb-2">Jawaban FAQ Asal</p>
+                    <div class="bg-white rounded-lg p-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line border border-rose-50">
+                        {{ $tugas->pertanyaan->isi_jawaban }}
+                    </div>
+                </div>
+            @endif
 
         </div>
 
@@ -206,11 +219,6 @@
         <!-- TOMBOL AKSI -->
         <div class="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-gray-100">
 
-            <a href="{{ route('pertanyaanLanjutan.index') }}"
-               class="px-6 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50">
-                Batal
-            </a>
-
             <button type="submit"
                     onclick="document.getElementById('aksiJawaban').value='draft'"
                     class="px-6 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-800 hover:bg-gray-50">
@@ -225,6 +233,23 @@
 
         </div>
 
+    </form>
+
+    {{-- Form Tutup — TERPISAH dari form utama agar tidak perlu isi jawaban --}}
+    <form action="{{ route('pertanyaanLanjutan.tutup', $tugas->id) }}" method="POST"
+          onsubmit="return confirm('Yakin menutup pertanyaan ini? Jawaban FAQ asal dianggap sudah cukup jelas.')">
+        @csrf
+        @method('PATCH')
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <p class="text-sm font-bold text-amber-800">Jawaban FAQ asal sudah cukup jelas?</p>
+                <p class="text-xs text-amber-700 mt-0.5">Klik tombol ini untuk menutup pertanyaan tanpa perlu menulis jawaban baru.</p>
+            </div>
+            <button type="submit"
+                    class="shrink-0 px-6 py-3 rounded-xl border border-amber-400 bg-white text-sm font-bold text-amber-800 hover:bg-amber-100 transition">
+                Tutup Pertanyaan Ini
+            </button>
+        </div>
     </form>
 
 </div>

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASK UBAYA - Student Knowledge Base</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Google Fonts: Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -105,12 +107,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <!-- Brand Logo -->
             <a href="{{ route('mahasiswa.index') }}" class="flex items-center gap-3 group">
-                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#7C1224] to-[#5C0A19] flex items-center justify-center text-white shadow-md shadow-maroon-base/20 group-hover:scale-105 transition-transform duration-200">
-                    <!-- Mortarboard / Student Icon -->
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z"/>
-                    </svg>
-                </div>
+                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-11 h-11 rounded-2xl shadow-md group-hover:scale-105 transition-transform duration-200">
                 <div class="flex flex-col">
                     <span class="text-lg font-black tracking-tight text-gray-900 group-hover:text-[#7C1224] transition-colors leading-none">ASK UBAYA</span>
                     <span class="text-[9.5px] font-bold text-gray-400 tracking-[0.25em] uppercase mt-1">STUDENT KNOWLEDGE</span>
@@ -396,8 +393,6 @@
                                 <div class="bg-gray-50/70 border-t border-gray-100 px-5 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:pl-20 text-xs text-gray-500">
                                     <div class="flex items-center gap-2">
                                         <span>Diperbarui {{ $item->updated_at ? $item->updated_at->diffForHumans() : '2 hari lalu' }}</span>
-                                        <span>·</span>
-                                        <span class="text-gray-600 font-medium">{{ 35 + ($item->id * 7) }} orang terbantu</span>
                                     </div>
                                     <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                                         <span class="text-gray-500 font-medium">Apakah membantu?</span>
@@ -521,11 +516,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <!-- Brand -->
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-[#7C1224] flex items-center justify-center text-white shadow-xs">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z"/>
-                    </svg>
-                </div>
+                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-9 h-9 rounded-xl shadow-xs">
                 <div class="flex flex-col">
                     <span class="text-sm font-black tracking-tight text-gray-900 leading-none">ASK UBAYA</span>
                     <span class="text-[8.5px] font-bold text-gray-400 tracking-[0.2em] uppercase mt-0.5">STUDENT KNOWLEDGE</span>

@@ -327,7 +327,7 @@
                             @elseif ($item->status === 'dijawab')
 
                                 <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold">
-                                    <i class="fas fa-check-double"></i>
+                                    <i class="fas fa-check"></i>
                                     <span>Selesai Dijawab</span>
                                 </span>
 
