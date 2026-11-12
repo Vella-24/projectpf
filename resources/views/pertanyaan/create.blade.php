@@ -29,14 +29,14 @@
                 <!-- Simpan Draft -->
                 <button type="button" 
                         onclick="submitDenganStatus('draft')" 
-                        class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow">
+                        class="btn-submit-action px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow">
                     Simpan Draft
                 </button>
 
                 <!-- Kirim untuk Validasi -->
                 <button type="button" 
                         onclick="submitDenganStatus('menunggu_validasi')" 
-                        class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg">
+                        class="btn-submit-action inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg">
                     <span>Kirim untuk Validasi</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -99,7 +99,39 @@
                            value="{{ old('judul_pertanyaan') }}" 
                            placeholder="Contoh: Bagaimana cara mengajukan cuti kuliah?" 
                            required 
+                           autocomplete="off"
                            class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-sm">
+
+                    <!-- Peringatan Kemiripan Fuzzy (Levenshtein Distance) - BLOKIR INPUT DUPLIKAT -->
+                    <div id="kemiripan-wrapper" class="hidden mt-3">
+                        <div class="bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 text-xs shadow-md transition-all">
+                            <div class="flex items-start gap-3">
+                                <span class="p-2 rounded-xl bg-rose-100 text-rose-700 shrink-0 mt-0.5">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="9" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01" />
+                                    </svg>
+                                </span>
+                                <div class="space-y-1">
+                                    <p class="font-extrabold text-rose-900 text-sm" id="kemiripan-title">
+                                        ⛔ Pertanyaan Tidak Dapat Dilanjutkan!
+                                    </p>
+                                    <p class="text-xs text-rose-800 leading-relaxed font-medium" id="kemiripan-desc">
+                                        Sistem mendeteksi pertanyaan ini serupa dengan data yang sudah ada di database. Demi mencegah duplikasi, <strong>tombol simpan dinonaktifkan</strong> sampai Anda mengubah rumusan pertanyaan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Daftar Pertanyaan Mirip -->
+                            <div id="daftar-pertanyaan-mirip" class="mt-3 space-y-2 border-t border-rose-200 pt-3">
+                                <!-- Render dinamis via JS -->
+                            </div>
+
+                            <div class="mt-3 pt-2.5 border-t border-rose-200 text-[11px] text-rose-700 font-medium">
+                                💡 <em>Silakan gunakan pertanyaan yang sudah ada, atau ubah teks pertanyaan Anda di atas agar tidak serupa.</em>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Kategori Pertanyaan * (Data Entry hanya memilih dari kategori yang ada) -->
@@ -198,12 +230,12 @@
                 </a>
                 <button type="button" 
                         onclick="submitDenganStatus('draft')" 
-                        class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow text-center">
+                        class="btn-submit-action px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow text-center">
                     Simpan Draft
                 </button>
                 <button type="button" 
                         onclick="submitDenganStatus('menunggu_validasi')" 
-                        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg text-center">
+                        class="btn-submit-action inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg text-center">
                     <span>Kirim untuk Validasi</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -222,6 +254,10 @@
 <script>
     // Penanganan tombol Simpan Draft vs Kirim untuk Validasi
     function submitDenganStatus(statusBaru) {
+        if (typeof adaKemiripanTerdeteksi !== 'undefined' && adaKemiripanTerdeteksi) {
+            alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
+            return false;
+        }
         document.getElementById('input-status').value = statusBaru;
         document.getElementById('form-pengetahuan').submit();
     }
@@ -295,5 +331,176 @@
             event.target.parentElement.remove();
         }
     });
+
+    // =========================================================================
+    // FUZZY MATCHING (LEVENSHTEIN DISTANCE) - DETEKSI PERTANYAAN SERUPA REAL-TIME
+    // =========================================================================
+    const inputJudul = document.getElementById('judul_pertanyaan');
+    const kemiripanWrapper = document.getElementById('kemiripan-wrapper');
+    const daftarMirip = document.getElementById('daftar-pertanyaan-mirip');
+    const formPengetahuan = document.getElementById('form-pengetahuan');
+
+    let timerDebounce = null;
+    let adaKemiripanTerdeteksi = false;
+
+    // Kunci atau buka tombol submit jika kemiripan terdeteksi
+    function setSubmitButtonsState(isBlocked) {
+        adaKemiripanTerdeteksi = isBlocked;
+        const buttons = document.querySelectorAll('.btn-submit-action');
+        buttons.forEach(function(btn) {
+            if (isBlocked) {
+                btn.disabled = true;
+                btn.setAttribute('title', 'Tidak dapat menyimpan: Pertanyaan serupa terdeteksi.');
+                btn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            } else {
+                btn.disabled = false;
+                btn.removeAttribute('title');
+                btn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
+            }
+        });
+    }
+
+    if (formPengetahuan) {
+        formPengetahuan.addEventListener('submit', function(e) {
+            if (adaKemiripanTerdeteksi) {
+                e.preventDefault();
+                alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
+                return false;
+            }
+        });
+    }
+
+    inputJudul.addEventListener('input', function() {
+        const query = this.value.trim();
+
+        clearTimeout(timerDebounce);
+
+        // Jika teks kurang dari 5 karakter, reset status dan sembunyikan peringatan
+        if (query.length < 5) {
+            kemiripanWrapper.classList.add('hidden');
+            daftarMirip.innerHTML = '';
+            setSubmitButtonsState(false);
+            return;
+        }
+
+        // Debounce 450ms agar tidak spam request setiap huruf diketik
+        timerDebounce = setTimeout(function() {
+            jalankanCekKemiripan(query);
+        }, 450);
+    });
+
+    async function jalankanCekKemiripan(teks) {
+        try {
+            const response = await fetch("{{ route('pertanyaan.cekKemiripan') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    pertanyaan: teks,
+                    threshold: 70 // Ambang batas kemiripan 70%
+                })
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+
+            if (data.matches && data.matches.length > 0) {
+                renderPeringatanKemiripan(data.matches);
+                setSubmitButtonsState(true); // BLOKIR tombol submit
+            } else {
+                kemiripanWrapper.classList.add('hidden');
+                daftarMirip.innerHTML = '';
+                setSubmitButtonsState(false); // BUKA KEMBALI tombol submit
+            }
+        } catch (error) {
+            console.error('Gagal memeriksa kemiripan pertanyaan:', error);
+        }
+    }
+
+    function renderPeringatanKemiripan(matches) {
+        daftarMirip.innerHTML = '';
+
+        matches.forEach(function(item, index) {
+            const badgeWarna = item.kemiripan >= 80 
+                ? 'bg-rose-100 text-rose-800 border-rose-300 font-extrabold'
+                : 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
+
+            let statusWarna = 'bg-gray-100 text-gray-700';
+            if (item.status === 'disetujui') {
+                statusWarna = 'bg-emerald-100 text-emerald-800';
+            } else if (item.status === 'menunggu_validasi') {
+                statusWarna = 'bg-sky-100 text-sky-800';
+            } else if (item.status === 'ditolak') {
+                statusWarna = 'bg-rose-100 text-rose-700';
+            }
+
+            const card = document.createElement('div');
+            card.className = 'p-3 bg-white/95 rounded-xl border border-amber-200/90 shadow-2xs space-y-1.5 transition';
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] border ${badgeWarna}">
+                            ${item.kemiripan}% Mirip
+                        </span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusWarna}">
+                            ${item.status_label}
+                        </span>
+                    </div>
+                    <span class="text-[10px] text-gray-400">
+                        Kategori: <strong class="text-gray-600">${item.kategori}</strong>
+                    </span>
+                </div>
+
+                <p class="text-xs font-bold text-gray-900 leading-snug">
+                    ${escapeHtml(item.judul_pertanyaan)}
+                </p>
+
+                <div class="flex items-center justify-between text-[10px] text-gray-500 pt-1">
+                    <span>Diinput oleh: <strong>${escapeHtml(item.pembuat)}</strong></span>
+                    <button type="button" class="btn-toggle-jawaban font-semibold text-[#741228] hover:underline" data-target="jawaban-${index}">
+                        Lihat Jawaban ▾
+                    </button>
+                </div>
+
+                <div id="jawaban-${index}" class="hidden mt-2 p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-[11px] text-gray-700 leading-relaxed whitespace-pre-line">
+                    ${escapeHtml(item.isi_jawaban)}
+                </div>
+            `;
+
+            daftarMirip.appendChild(card);
+        });
+
+        // Event listener toggle intip jawaban
+        daftarMirip.querySelectorAll('.btn-toggle-jawaban').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    const isHidden = targetEl.classList.contains('hidden');
+                    targetEl.classList.toggle('hidden');
+                    this.textContent = isHidden ? 'Sembunyikan Jawaban ▴' : 'Lihat Jawaban ▾';
+                }
+            });
+        });
+
+        kemiripanWrapper.classList.remove('hidden');
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
 </script>
 @endsection

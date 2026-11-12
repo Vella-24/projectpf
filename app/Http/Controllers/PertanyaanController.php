@@ -97,6 +97,14 @@ class PertanyaanController extends Controller
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
 
+        // Cek kemiripan pertanyaan di server-side (mencegah bypass)
+        $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan']);
+        if ($kemiripan) {
+            return back()->withInput()->withErrors([
+                'judul_pertanyaan' => "Pertanyaan tidak dapat disimpan karena terdeteksi serupa ({$kemiripan['kemiripan']}%) dengan pertanyaan yang sudah ada: \"{$kemiripan['judul_pertanyaan']}\". Silakan ubah teks pertanyaan agar tidak duplikat."
+            ]);
+        }
+
         $daftarTag = $validated['tags'] ?? []; //ambil daftar kata kunci
         unset($validated['tags']);
 
@@ -177,6 +185,14 @@ class PertanyaanController extends Controller
             'isi_jawaban.required' => 'Isi jawaban resmi wajib diisi.',
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
+
+        // Cek kemiripan pertanyaan di server-side (mencegah bypass), kecualikan pertanyaan saat ini
+        $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan'], $pertanyaan->id);
+        if ($kemiripan) {
+            return back()->withInput()->withErrors([
+                'judul_pertanyaan' => "Pertanyaan tidak dapat disimpan karena terdeteksi serupa ({$kemiripan['kemiripan']}%) dengan pertanyaan yang sudah ada: \"{$kemiripan['judul_pertanyaan']}\". Silakan ubah teks pertanyaan agar tidak duplikat."
+            ]);
+        }
 
         $daftarTag = $validated['tags'] ?? [];
         unset($validated['tags']);
@@ -326,5 +342,174 @@ class PertanyaanController extends Controller
         }
 
         return view('mahasiswa.search', compact('hasil', 'keyword'));
+    }
+
+    /**
+     * Memeriksa kemiripan pertanyaan baru dengan pertanyaan yang sudah ada
+     * menggunakan algoritma Fuzzy Matching (Levenshtein Distance).
+     */
+    public function cekKemiripan(Request $request)
+    {
+        if (session('user.role') !== 'data_entry') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $inputPertanyaan = trim((string) $request->input('pertanyaan', ''));
+
+        // Jika teks terlalu pendek, tidak perlu diperiksa
+        if (mb_strlen($inputPertanyaan, 'UTF-8') < 5) {
+            return response()->json(['matches' => []]);
+        }
+
+        $cleanInput = $this->normalisasiTeks($inputPertanyaan);
+        if (empty($cleanInput)) {
+            return response()->json(['matches' => []]);
+        }
+
+        // Ambil semua pertanyaan yang ada di database (seluruh user/data entry)
+        $query = Pertanyaan::with(['kategori', 'user'])
+            ->select('id', 'judul_pertanyaan', 'isi_jawaban', 'kategori_id', 'user_id', 'status');
+
+        // Jika dalam mode edit, abaikan pertanyaan itu sendiri
+        if ($request->filled('ignore_id')) {
+            $query->where('id', '!=', $request->ignore_id);
+        }
+
+        $pertanyaans = $query->get();
+        $matches = [];
+
+        // Batas ambang kemiripan minimum (default 70%)
+        $threshold = (float) $request->input('threshold', 70);
+
+        foreach ($pertanyaans as $item) {
+            $cleanTarget = $this->normalisasiTeks($item->judul_pertanyaan);
+            if (empty($cleanTarget)) {
+                continue;
+            }
+
+            // Batasi string maksimal 255 karakter sesuai batasan fungsi levenshtein() PHP
+            $str1 = mb_substr($cleanInput, 0, 255, 'UTF-8');
+            $str2 = mb_substr($cleanTarget, 0, 255, 'UTF-8');
+
+            $len1 = strlen($str1);
+            $len2 = strlen($str2);
+            $maxLen = max($len1, $len2);
+
+            if ($maxLen === 0) {
+                continue;
+            }
+
+            $dist = levenshtein($str1, $str2);
+            $levScore = (1 - ($dist / $maxLen)) * 100;
+
+            // similar_text sebagai pelengkap token/panjang teks
+            similar_text($str1, $str2, $simScore);
+
+            $finalScore = max($levScore, $simScore);
+
+            if ($finalScore >= $threshold) {
+                // Tentukan label status yang mudah dipahami
+                $statusLabel = match ($item->status) {
+                    'disetujui' => 'Dipublikasikan',
+                    'menunggu_validasi' => 'Menunggu Validasi',
+                    'draft' => 'Draft',
+                    'ditolak' => 'Perlu Revisi',
+                    default => ucfirst($item->status),
+                };
+
+                $matches[] = [
+                    'id' => $item->id,
+                    'judul_pertanyaan' => $item->judul_pertanyaan,
+                    'isi_jawaban' => \Illuminate\Support\Str::limit(strip_tags($item->isi_jawaban), 160),
+                    'kategori' => $item->kategori->nama_kategori ?? 'Umum',
+                    'pembuat' => $item->user->name ?? 'Staff Data Entry',
+                    'status' => $item->status,
+                    'status_label' => $statusLabel,
+                    'kemiripan' => (int) round($finalScore),
+                ];
+            }
+        }
+
+        // Urutkan dari tingkat kemiripan tertinggi ke terendah
+        usort($matches, function ($a, $b) {
+            return $b['kemiripan'] <=> $a['kemiripan'];
+        });
+
+        // Ambil maksimal 5 pertanyaan paling mirip
+        $topMatches = array_slice($matches, 0, 5);
+
+        return response()->json([
+            'query' => $inputPertanyaan,
+            'matches' => $topMatches,
+            'total_found' => count($matches),
+        ]);
+    }
+
+    /**
+     * Mencari pertanyaan yang paling mirip di database jika melewati ambang batas kemiripan (threshold 70%).
+     */
+    protected function temukanPertanyaanMirip(string $judul, ?int $ignoreId = null, float $threshold = 70.0): ?array
+    {
+        $cleanInput = $this->normalisasiTeks($judul);
+        if (mb_strlen($cleanInput, 'UTF-8') < 5) {
+            return null;
+        }
+
+        $query = Pertanyaan::select('id', 'judul_pertanyaan');
+        if ($ignoreId) {
+            $query->where('id', '!=', $ignoreId);
+        }
+
+        $pertanyaans = $query->get();
+        $topMatch = null;
+        $highestScore = 0;
+
+        foreach ($pertanyaans as $item) {
+            $cleanTarget = $this->normalisasiTeks($item->judul_pertanyaan);
+            if (empty($cleanTarget)) {
+                continue;
+            }
+
+            $str1 = mb_substr($cleanInput, 0, 255, 'UTF-8');
+            $str2 = mb_substr($cleanTarget, 0, 255, 'UTF-8');
+
+            $len1 = strlen($str1);
+            $len2 = strlen($str2);
+            $maxLen = max($len1, $len2);
+
+            if ($maxLen === 0) {
+                continue;
+            }
+
+            $dist = levenshtein($str1, $str2);
+            $levScore = (1 - ($dist / $maxLen)) * 100;
+
+            similar_text($str1, $str2, $simScore);
+            $score = max($levScore, $simScore);
+
+            if ($score >= $threshold && $score > $highestScore) {
+                $highestScore = $score;
+                $topMatch = [
+                    'id' => $item->id,
+                    'judul_pertanyaan' => $item->judul_pertanyaan,
+                    'kemiripan' => (int) round($score),
+                ];
+            }
+        }
+
+        return $topMatch;
+    }
+
+    /**
+     * Normalisasi teks untuk perbandingan fuzzy (lowercase, hapus tanda baca & spasi ganda)
+     */
+    protected function normalisasiTeks(string $teks): string
+    {
+        $teks = mb_strtolower($teks, 'UTF-8');
+        // Ganti karakter non huruf/angka dengan spasi
+        $teks = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $teks);
+        // Hapus spasi ganda
+        $teks = preg_replace('/\s+/', ' ', $teks);
+        return trim($teks);
     }
 }

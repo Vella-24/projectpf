@@ -18,6 +18,9 @@ Route::prefix('staff')->middleware(CheckRole::class . ':data_entry')->group(func
     // Dashboard Data Entry
     Route::get('/', [PertanyaanController::class, 'index'])->name('pertanyaan.index');
 
+    // Cek kemiripan pertanyaan (Fuzzy Matching Levenshtein Distance)
+    Route::post('/pertanyaan/cek-kemiripan', [PertanyaanController::class, 'cekKemiripan'])->name('pertanyaan.cekKemiripan');
+
     // CRUD Pertanyaan
     Route::resource('pertanyaan', PertanyaanController::class)->except(['index']);
 
