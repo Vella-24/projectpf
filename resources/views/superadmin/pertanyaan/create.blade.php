@@ -104,14 +104,9 @@
 
                 <!-- Kategori Pertanyaan * -->
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label for="kategori_id" class="block text-xs font-bold text-gray-800">
-                            Kategori <span class="text-rose-500">*</span>
-                        </label>
-                        <a href="{{ route('kategori.create') }}" target="_blank" class="text-[11px] font-bold text-[#741228] hover:underline">
-                            Tambah Kategori Baru
-                        </a>
-                    </div>
+                    <label for="kategori_id" class="block text-xs font-bold text-gray-800 mb-1">
+                        Kategori <span class="text-rose-500">*</span>
+                    </label>
                     <select id="kategori_id" 
                             name="kategori_id" 
                             required 

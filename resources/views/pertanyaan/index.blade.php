@@ -179,11 +179,6 @@
                 </h2>
                 <p class="text-xs text-gray-400 font-medium">Pantau status, lakukan peninjauan, atau perbarui konten pertanyaan.</p>
             </div>
-            @if(request()->hasAny(['q', 'kategori_id', 'status']))
-                <a href="{{ route('pertanyaan.index') }}" class="btn-ajax-reset text-xs font-bold text-[#741228] hover:underline flex items-center gap-1 transition">
-                    Tampilkan Semua Pertanyaan &rarr;
-                </a>
-            @endif
         </div>
 
         <!-- Filter & Pencarian Bar -->
