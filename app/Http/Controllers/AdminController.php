@@ -13,7 +13,7 @@ class AdminController extends Controller
 {
 
     // ==========================================
-    // 4. KELOLA PERTANYAAN (SUPERADMIN)
+    // KELOLA PERTANYAAN (SUPERADMIN)
     // ==========================================
     public function pertanyaanIndex(Request $request)
     {
@@ -180,7 +180,7 @@ class AdminController extends Controller
     }
 
     // ==========================================
-    // 5. MANAJEMEN PENGGUNA
+    // MANAJEMEN PENGGUNA
     // ==========================================
     // Menampilkan daftar pengguna
     public function index()
