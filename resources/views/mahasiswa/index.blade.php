@@ -104,27 +104,20 @@
 
     <!-- Top Navigation Bar -->
     <header class="bg-white/95 backdrop-blur sticky top-0 z-40 border-b border-gray-150 transition-all shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <!-- Brand Logo -->
-            <a href="{{ route('mahasiswa.index') }}" class="flex items-center gap-3 group">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-11 h-11 rounded-2xl shadow-md group-hover:scale-105 transition-transform duration-200">
+            <a href="{{ route('mahasiswa.index') }}" class="flex items-center gap-2.5 group">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-9 h-9 rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-200">
                 <div class="flex flex-col">
-                    <span class="text-lg font-black tracking-tight text-gray-900 group-hover:text-[#7C1224] transition-colors leading-none">ASK UBAYA</span>
-                    <span class="text-[9.5px] font-bold text-gray-400 tracking-[0.25em] uppercase mt-1">STUDENT KNOWLEDGE</span>
+                    <span class="text-base font-black tracking-tight text-gray-900 group-hover:text-[#7C1224] transition-colors leading-none">ASK UBAYA</span>
+                    <span class="text-[8.5px] font-bold text-gray-400 tracking-[0.22em] uppercase mt-0.5">STUDENT KNOWLEDGE</span>
                 </div>
             </a>
 
-            <!-- Navigation Links -->
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="{{ route('mahasiswa.index') }}" class="text-sm font-semibold text-[#7C1224] hover:text-[#5C0A19] transition-colors">Beranda</a>
-                <a href="#topik" class="text-sm font-medium text-gray-600 hover:text-[#7C1224] transition-colors">Jelajahi Topik</a>
-                <a href="#tentang" class="text-sm font-medium text-gray-600 hover:text-[#7C1224] transition-colors">Tentang</a>
-            </nav>
-
             <!-- Portal Staf Button & Trigger -->
             <div class="relative">
-                <a href="/login" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-xs transition-all active:scale-95">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <a href="/login" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-2xs transition-all active:scale-95">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     <span>Portal Staf</span>
@@ -134,32 +127,31 @@
     </header>
 
     <main class="flex-grow">
-        <!-- Hero Section -->
-        <section class="hero-pattern relative text-white pt-16 pb-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <!-- Hero Section (Lebih Ringkas & Pas di Layar) -->
+        <section class="hero-pattern relative text-white pt-6 pb-14 sm:pt-8 sm:pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
             <!-- Concentric Circular Lines Decorative Background -->
-            <div class="absolute -right-24 -top-24 w-96 h-96 rounded-full border border-white/10 pointer-events-none hidden lg:block"></div>
-            <div class="absolute -right-48 -top-48 w-[540px] h-[540px] rounded-full border border-white/5 pointer-events-none hidden lg:block"></div>
-            <div class="absolute -right-72 -top-72 w-[720px] h-[720px] rounded-full border border-white/[0.03] pointer-events-none hidden lg:block"></div>
+            <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full border border-white/10 pointer-events-none hidden lg:block"></div>
+            <div class="absolute -right-48 -top-48 w-[450px] h-[450px] rounded-full border border-white/5 pointer-events-none hidden lg:block"></div>
 
-            <div class="max-w-4xl mx-auto text-center relative z-10">
+            <div class="max-w-3xl mx-auto text-center relative z-10">
                 <!-- Pill Badge -->
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-xs font-semibold tracking-wider uppercase mb-7 shadow-sm">
-                    <span class="text-amber-300 text-sm">✦</span>
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-[11px] font-semibold tracking-wider uppercase mb-3 sm:mb-4 shadow-xs">
+                    <span class="text-amber-300 text-xs">✦</span>
                     <span>PUSAT INFORMASI MAHASISWA UBAYA</span>
                 </div>
 
                 <!-- Main Hero Headline -->
-                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.15] mb-5">
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight mb-2">
                     Apa yang ingin kamu ketahui?
                 </h1>
 
                 <!-- Subtitle -->
-                <p class="text-base sm:text-lg text-rose-100/90 max-w-2xl mx-auto font-normal leading-relaxed mb-9">
+                <p class="text-xs sm:text-sm text-rose-100/90 max-w-xl mx-auto font-normal leading-relaxed mb-5 sm:mb-6">
                     Temukan jawaban tepercaya seputar perkuliahan dan layanan kampus dalam hitungan detik.
                 </p>
 
                 <!-- Search Form -->
-                <form action="{{ route('mahasiswa.index') }}" method="GET" class="max-w-2xl mx-auto">
+                <form action="{{ route('mahasiswa.index') }}#hasil-pencarian" method="GET" class="max-w-2xl mx-auto">
                     <!-- Preserve category filter if active -->
                     @if(request('kategori_id'))
                         <input type="hidden" name="kategori_id" value="{{ request('kategori_id') }}">
@@ -168,9 +160,9 @@
                         <input type="hidden" name="status" value="{{ request('status') }}">
                     @endif
 
-                    <div class="bg-white rounded-2xl md:rounded-full p-2 pl-5 shadow-2xl shadow-black/25 flex flex-col sm:flex-row items-center gap-2 border border-white/30 focus-within:ring-4 focus-within:ring-white/20 transition-all">
-                        <div class="flex items-center gap-3 w-full">
-                            <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <div class="bg-white rounded-2xl md:rounded-full p-1.5 pl-4 sm:pl-5 shadow-xl shadow-black/20 flex flex-col sm:flex-row items-center gap-2 border border-white/30 focus-within:ring-3 focus-within:ring-white/30 transition-all">
+                        <div class="flex items-center gap-2.5 w-full">
+                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <input 
@@ -178,105 +170,81 @@
                                 name="q" 
                                 value="{{ request('q') }}" 
                                 placeholder='Ketik pertanyaanmu, misalnya "cara mengajukan cuti"' 
-                                class="w-full bg-transparent text-gray-800 placeholder-gray-400 text-sm sm:text-base focus:outline-none py-2"
+                                class="w-full bg-transparent text-gray-800 placeholder-gray-400 text-xs sm:text-sm focus:outline-none py-1.5"
                                 autocomplete="off"
                             >
                             @if(request('q'))
-                                <a href="{{ route('mahasiswa.index', request()->except('q')) }}" class="text-gray-400 hover:text-gray-600 px-2">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <a href="{{ route('mahasiswa.index', request()->except('q')) }}" class="text-gray-400 hover:text-gray-600 px-2" title="Hapus pencarian">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </a>
                             @endif
                         </div>
-                        <button type="submit" class="w-full sm:w-auto px-7 py-3 rounded-xl md:rounded-full bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-sm transition-all duration-200 shadow-md shadow-maroon-base/30 whitespace-nowrap active:scale-95">
+                        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 sm:px-6 rounded-xl md:rounded-full bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-maroon-base/30 whitespace-nowrap active:scale-95">
                             Cari Jawaban
                         </button>
                     </div>
                 </form>
 
                 <!-- Popular Search Chips -->
-                <div class="mt-6 flex items-center justify-center flex-wrap gap-2 text-xs sm:text-sm text-white/80">
-                    <span class="font-normal text-white/70">Populer:</span>
-                    <a href="{{ route('mahasiswa.index', ['q' => 'cuti']) }}" class="px-3.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-xs">Pengajuan cuti</a>
-                    <a href="{{ route('mahasiswa.index', ['q' => 'presensi']) }}" class="px-3.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-xs">Presensi</a>
-                    <a href="{{ route('mahasiswa.index', ['q' => 'wisuda']) }}" class="px-3.5 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-xs">Jadwal wisuda</a>
+                <div class="mt-3 sm:mt-3.5 flex items-center justify-center flex-wrap gap-1.5 text-xs text-white/80">
+                    <span class="font-normal text-white/70 text-[11px]">Populer:</span>
+                    <a href="{{ route('mahasiswa.index', ['q' => 'cuti']) }}#hasil-pencarian" class="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-[11px]">Pengajuan cuti</a>
+                    <a href="{{ route('mahasiswa.index', ['q' => 'presensi']) }}#hasil-pencarian" class="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-[11px]">Presensi</a>
+                    <a href="{{ route('mahasiswa.index', ['q' => 'wisuda']) }}#hasil-pencarian" class="px-2.5 py-0.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 font-medium transition-all text-[11px]">Jadwal wisuda</a>
                 </div>
             </div>
         </section>
 
-        <!-- Topic Categories Bar (Overlapping Card) -->
-        <section id="topik" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 relative z-20">
-            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-lg shadow-gray-200/50 border border-gray-150">
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                    @php
-                        // Mapping categories with mockup specific colors and icons
-                        $categoryIcons = [
-                            'Akademik' => [
-                                'bg' => 'bg-rose-50 text-rose-600 group-hover:bg-rose-100',
-                                'active_bg' => 'bg-rose-100 text-rose-700 ring-2 ring-rose-500',
-                                'count_default' => '18 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>'
-                            ],
-                            'Perkuliahan' => [
-                                'bg' => 'bg-purple-50 text-purple-600 group-hover:bg-purple-100',
-                                'active_bg' => 'bg-purple-100 text-purple-700 ring-2 ring-purple-500',
-                                'count_default' => '64 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>'
-                            ],
-                            'Keuangan' => [
-                                'bg' => 'bg-amber-50 text-amber-600 group-hover:bg-amber-100',
-                                'active_bg' => 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
-                                'count_default' => '36 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'
-                            ],
-                            'Kemahasiswaan' => [
-                                'bg' => 'bg-teal-50 text-teal-600 group-hover:bg-teal-100',
-                                'active_bg' => 'bg-teal-100 text-teal-700 ring-2 ring-teal-500',
-                                'count_default' => '52 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>'
-                            ],
-                            'Wisuda' => [
-                                'bg' => 'bg-rose-50 text-rose-600 group-hover:bg-rose-100',
-                                'active_bg' => 'bg-rose-100 text-rose-700 ring-2 ring-rose-500',
-                                'count_default' => '29 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>'
-                            ],
-                            'Layanan Lain' => [
-                                'bg' => 'bg-sky-50 text-sky-600 group-hover:bg-sky-100',
-                                'active_bg' => 'bg-sky-100 text-sky-700 ring-2 ring-sky-500',
-                                'count_default' => '41 artikel',
-                                'svg' => '<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>'
-                            ],
-                        ];
+        <!-- Topic Categories Bar (Overlapping Card - Lebih Ringkas & Pas di Viewport) -->
+        <section id="topik" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-9 relative z-20 {{ !(request()->filled('q') || request()->filled('kategori_id')) ? 'mb-4 sm:mb-6' : '' }}">
+            <div class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 md:p-5 shadow-lg shadow-gray-200/50 border border-gray-150">
+                @php
+                    // Sort by most questions first
+                    $sortedKategoris = $kategoris->sortByDesc('pertanyaans_count');
 
-                        // Target 6 categories as in screenshot
-                        $targetCategories = ['Akademik', 'Perkuliahan', 'Keuangan', 'Kemahasiswaan', 'Wisuda', 'Layanan Lain'];
-                    @endphp
+                    // Color palette cycling
+                    $colorPalette = [
+                        ['bg' => 'bg-purple-50 text-purple-600 group-hover:bg-purple-100', 'active_bg' => 'bg-purple-100 text-purple-700 ring-2 ring-purple-500'],
+                        ['bg' => 'bg-amber-50 text-amber-600 group-hover:bg-amber-100',   'active_bg' => 'bg-amber-100 text-amber-700 ring-2 ring-amber-500'],
+                        ['bg' => 'bg-teal-50 text-teal-600 group-hover:bg-teal-100',      'active_bg' => 'bg-teal-100 text-teal-700 ring-2 ring-teal-500'],
+                        ['bg' => 'bg-rose-50 text-rose-600 group-hover:bg-rose-100',      'active_bg' => 'bg-rose-100 text-rose-700 ring-2 ring-rose-500'],
+                        ['bg' => 'bg-sky-50 text-sky-600 group-hover:bg-sky-100',         'active_bg' => 'bg-sky-100 text-sky-700 ring-2 ring-sky-500'],
+                        ['bg' => 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100', 'active_bg' => 'bg-emerald-100 text-emerald-700 ring-2 ring-emerald-500'],
+                    ];
 
-                    @foreach($targetCategories as $targetName)
+                    // SVG icons cycling
+                    $svgIcons = [
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>',
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>',
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>',
+                        '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>',
+                    ];
+                @endphp
+
+                <div class="grid grid-cols-3 sm:grid-cols-5 gap-1">
+                    @foreach($sortedKategoris as $i => $cat)
                         @php
-                            $catModel = $kategoris->first(function($k) use ($targetName) {
-                                return stripos($k->nama_kategori, $targetName) !== false;
-                            });
-                            $catId = $catModel ? $catModel->id : null;
-                            $isSelected = $catId && request('kategori_id') == $catId;
-                            $style = $categoryIcons[$targetName] ?? $categoryIcons['Layanan Lain'];
-                            $countText = $catModel ? ($catModel->pertanyaans_count . ' artikel') : $style['count_default'];
-                            $linkHref = $isSelected 
-                                ? route('mahasiswa.index', request()->except('kategori_id'))
-                                : ($catId ? route('mahasiswa.index', array_merge(request()->query(), ['kategori_id' => $catId])) : '#');
+                            $isSelected = request('kategori_id') == $cat->id;
+                            $style = $colorPalette[$i % count($colorPalette)];
+                            $svg   = $svgIcons[$i % count($svgIcons)];
+                            $linkHref = $isSelected
+                                ? route('mahasiswa.index')
+                                : route('mahasiswa.index', array_merge(request()->query(), ['kategori_id' => $cat->id])) . '#hasil-pencarian';
                         @endphp
 
-                        <a href="{{ $linkHref }}" class="group flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl hover:bg-gray-50/80 transition-all duration-200 {{ $isSelected ? 'bg-rose-50/50 ring-2 ring-[#7C1224]' : '' }}">
-                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 transition-transform duration-200 group-hover:scale-110 {{ $isSelected ? $style['active_bg'] : $style['bg'] }}">
-                                {!! $style['svg'] !!}
+                        <a href="{{ $linkHref }}" class="group flex flex-col items-center text-center p-2 sm:p-2.5 rounded-xl sm:rounded-2xl hover:bg-gray-50/80 transition-all duration-200 {{ $isSelected ? 'bg-rose-50/50 ring-2 ring-[#7C1224]' : '' }}">
+                            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center mb-1.5 transition-transform duration-200 group-hover:scale-110 {{ $isSelected ? $style['active_bg'] : $style['bg'] }}">
+                                {!! $svg !!}
                             </div>
-                            <span class="text-sm font-bold text-gray-900 group-hover:text-[#7C1224] transition-colors line-clamp-1">
-                                {{ $targetName }}
+                            <span class="text-xs sm:text-sm font-bold text-gray-900 group-hover:text-[#7C1224] transition-colors line-clamp-2 leading-tight">
+                                {{ $cat->nama_kategori }}
                             </span>
-                            <span class="text-xs text-gray-400 mt-0.5 font-medium">
-                                {{ $countText }}
+                            <span class="text-[10px] sm:text-[11px] text-gray-400 mt-0.5 font-medium">
+                                {{ $cat->pertanyaans_count }} artikel
                             </span>
                         </a>
                     @endforeach
@@ -284,27 +252,39 @@
             </div>
         </section>
 
-        <!-- Main Content Area: Questions & Sidebar -->
-        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20">
+        @if(request()->filled('q') || request()->filled('kategori_id'))
+        <!-- Main Content Area: Questions & Sidebar (Hanya muncul saat mahasiswa mencari atau memilih topik) -->
+        <section id="hasil-pencarian" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20 scroll-mt-32">
             <!-- Section Header -->
             <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-gray-200/70 mb-8">
                 <div>
                     <span class="text-xs font-black tracking-[0.2em] uppercase text-[#8B1538] block mb-1">
-                        PALING SERING DITANYAKAN
+                        @if(request()->filled('q'))
+                            HASIL PENCARIAN
+                        @else
+                            KATEGORI TOPIK
+                        @endif
                     </span>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
-                        Jawaban yang mungkin kamu cari
+                    <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight">
+                        @if(request()->filled('q'))
+                            Hasil pencarian untuk "<span class="text-[#7C1224]">{{ request('q') }}</span>"
+                        @elseif(request()->filled('kategori_id'))
+                            @php
+                                $selectedCat = $kategoris->firstWhere('id', request('kategori_id'));
+                            @endphp
+                            Pertanyaan seputar <span class="text-[#7C1224]">{{ $selectedCat->nama_kategori ?? 'Topik Terpilih' }}</span>
+                        @else
+                            Jawaban yang mungkin kamu cari
+                        @endif
                     </h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    @if(request('q') || request('kategori_id') || request('status'))
-                        <a href="{{ route('mahasiswa.index') }}" class="text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5">
-                            <span>Reset Filter</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </a>
-                    @endif
+                    <a href="{{ route('mahasiswa.index') }}" class="text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5" title="Tutup hasil dan bersihkan pencarian">
+                        <span>Tutup Hasil</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </a>
                     <span class="text-sm font-medium text-gray-500 whitespace-nowrap">
                         {{ $pertanyaans->total() }} jawaban ditemukan
                     </span>
@@ -509,22 +489,23 @@
                 </aside>
             </div>
         </section>
+        @endif
     </main>
 
-    <!-- Footer -->
-    <footer id="tentang" class="bg-white border-t border-gray-200 py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+    <!-- Footer (Lebih Ringkas & Pas di Layar) -->
+    <footer id="tentang" class="bg-white border-t border-gray-200 py-3 sm:py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
             <!-- Brand -->
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-9 h-9 rounded-xl shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <img src="{{ asset('images/logo.png') }}" alt="Logo ASK UBAYA" class="w-7 h-7 rounded-lg shadow-2xs">
                 <div class="flex flex-col">
-                    <span class="text-sm font-black tracking-tight text-gray-900 leading-none">ASK UBAYA</span>
-                    <span class="text-[8.5px] font-bold text-gray-400 tracking-[0.2em] uppercase mt-0.5">STUDENT KNOWLEDGE</span>
+                    <span class="text-xs font-black tracking-tight text-gray-900 leading-none">ASK UBAYA</span>
+                    <span class="text-[7.5px] font-bold text-gray-400 tracking-[0.2em] uppercase mt-0.5">STUDENT KNOWLEDGE</span>
                 </div>
             </div>
 
             <!-- Copyright -->
-            <div class="text-xs sm:text-sm text-gray-500 text-center md:text-right font-medium">
+            <div class="text-[11px] sm:text-xs text-gray-500 text-center md:text-right font-medium">
                 &copy; {{ date('Y') }} Universitas Surabaya · Direktorat Administrasi Akademik
             </div>
         </div>

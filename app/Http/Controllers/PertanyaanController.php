@@ -305,15 +305,14 @@ class PertanyaanController extends Controller
 
                 $pertanyaans = $query->paginate(10)->withQueryString();
             }
-        } else {
+        } elseif ($request->filled('kategori_id')) {
             $query = Pertanyaan::with(['kategori', 'user', 'tags'])->latest();
             $query->where('status', 'disetujui');
-
-            if ($request->filled('kategori_id')) {
-                $query->where('kategori_id', $request->kategori_id);
-            }
-
+            $query->where('kategori_id', $request->kategori_id);
             $pertanyaans = $query->paginate(10)->withQueryString();
+        } else {
+            // Awal buka: belum melakukan pencarian, tidak memuat daftar pertanyaan
+            $pertanyaans = Pertanyaan::whereRaw('1 = 0')->paginate(10);
         }
 
         return view('mahasiswa.index', compact('pertanyaans', 'kategoris'));
