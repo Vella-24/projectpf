@@ -511,4 +511,165 @@ class PertanyaanController extends Controller
         $teks = preg_replace('/\s+/', ' ', $teks);
         return trim($teks);
     }
+    /**
+     * Auto-suggest FAQ menggunakan fuzzy matching berbasis PHP (Levenshtein Distance & Similar Text).
+     * Tidak bergantung pada Meilisearch sehingga tidak terbatas pada maksimal 2 typo per kata.
+     * Cocok untuk skala FAQ kampus (puluhan hingga ratusan pertanyaan).
+     */
+    public function suggestFaq(Request $request)
+    {
+        $keyword = trim($request->get('q', ''));
+
+        if (mb_strlen($keyword, 'UTF-8') < 2) {
+            return response()->json(['matches' => []]);
+        }
+
+        // Ambil semua pertanyaan yang berstatus disetujui
+        $pertanyaans = Pertanyaan::with('tags')
+            ->where('status', 'disetujui')
+            ->get(['id', 'judul_pertanyaan', 'isi_jawaban']);
+
+        $scored = [];
+
+        foreach ($pertanyaans as $item) {
+            $score = $this->hitungSkorRelevansi($keyword, $item);
+
+            // Ambang batas 50% — cukup rendah untuk menangkap typo berat,
+            // tapi cukup tinggi untuk memfilter teks acak/tidak relevan
+            if ($score >= 50.0) {
+                $scored[] = [
+                    'item'  => $item,
+                    'score' => $score,
+                ];
+            }
+        }
+
+        // Urutkan dari skor kecocokan tertinggi ke terendah
+        usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
+
+        // Filter: hanya tampilkan hasil yang tidak terlalu jauh dari skor tertinggi
+        // Jika skor tertinggi 100 dan kedua 70, gap = 30 → yang kedua tidak ditampilkan
+        // Ini memastikan hanya FAQ yang benar-benar relevan yang muncul
+        if (!empty($scored)) {
+            $bestScore = $scored[0]['score'];
+            $scored = array_filter($scored, function ($entry) use ($bestScore) {
+                return ($bestScore - $entry['score']) <= 25.0;
+            });
+        }
+
+        // Ambil maksimal 5 hasil paling relevan
+        $topMatches = array_slice($scored, 0, 5);
+
+        $formattedMatches = array_map(function ($entry) {
+            $item = $entry['item'];
+            return [
+                'id'                => $item->id,
+                'judul_pertanyaan'  => $item->judul_pertanyaan,
+                'isi_jawaban'       => \Illuminate\Support\Str::limit(strip_tags($item->isi_jawaban), 100),
+            ];
+        }, $topMatches);
+
+        return response()->json(['matches' => $formattedMatches]);
+    }
+
+    /**
+     * Menghitung skor relevansi pencarian (0 - 100) menggunakan:
+     * 1. Exact substring matching (prioritas tertinggi)
+     * 2. Token-by-token fuzzy matching (Levenshtein Distance & Similar Text)
+     * 3. Prefix matching untuk kata yang belum selesai diketik
+     *
+     * Tidak ada batasan jumlah typo — semakin banyak typo, semakin rendah skornya secara proporsional.
+     */
+    protected function hitungSkorRelevansi(string $keyword, Pertanyaan $item): float
+    {
+        $cleanQuery  = mb_strtolower(trim($keyword), 'UTF-8');
+        $cleanTitle  = mb_strtolower(trim($item->judul_pertanyaan), 'UTF-8');
+        $cleanAnswer = mb_strtolower(strip_tags($item->isi_jawaban), 'UTF-8');
+
+        if (empty($cleanQuery)) {
+            return 0.0;
+        }
+
+        // 1. Exact phrase match di judul → skor sempurna
+        if (str_contains($cleanTitle, $cleanQuery)) {
+            return 100.0;
+        }
+
+        // 2. Tag match
+        $tagNames = $item->tags
+            ? $item->tags->pluck('nama_tag')->map(fn($t) => mb_strtolower($t, 'UTF-8'))->toArray()
+            : [];
+
+        foreach ($tagNames as $tag) {
+            if ($tag === $cleanQuery || str_contains($tag, $cleanQuery)) {
+                return 95.0;
+            }
+        }
+
+        // 3. Exact phrase match di isi jawaban
+        if (str_contains($cleanAnswer, $cleanQuery)) {
+            return 85.0;
+        }
+
+        // 4. Token-by-token fuzzy matching
+        $qWords     = array_values(array_filter(explode(' ', $cleanQuery), fn($w) => trim($w) !== ''));
+        $titleWords = preg_split('/[\s\(\)\,\.\?\!\/\-\:\;\"\']+/u', $cleanTitle, -1, PREG_SPLIT_NO_EMPTY);
+
+        if (empty($qWords) || empty($titleWords)) {
+            return 0.0;
+        }
+
+        $allTargetWords = array_merge($titleWords, $tagNames);
+        $totalWordScore = 0.0;
+
+        foreach ($qWords as $qw) {
+            $bestWordScore = 0.0;
+
+            foreach ($allTargetWords as $tw) {
+                // Exact word match
+                if ($qw === $tw) {
+                    $bestWordScore = 100.0;
+                    break;
+                }
+
+                // Prefix matching (user masih mengetik, misal 'prosed' → 'prosedur')
+                if (mb_strlen($qw) >= 3 && str_starts_with($tw, $qw)) {
+                    $score = (mb_strlen($qw) / mb_strlen($tw)) * 95.0;
+                    $bestWordScore = max($bestWordScore, $score);
+                }
+
+                // Reverse prefix (target lebih pendek, misal 'krs' cocok awal dari 'krsku')
+                if (mb_strlen($tw) >= 3 && str_starts_with($qw, $tw)) {
+                    $score = (mb_strlen($tw) / mb_strlen($qw)) * 90.0;
+                    $bestWordScore = max($bestWordScore, $score);
+                }
+
+                // Fuzzy matching menggunakan Levenshtein Distance & Similar Text
+                // Tidak ada batasan jumlah typo — skor turun secara proporsional terhadap jarak edit
+                $maxLen = max(mb_strlen($qw), mb_strlen($tw));
+                if ($maxLen >= 3) {
+                    $s1 = mb_substr($qw, 0, 255);
+                    $s2 = mb_substr($tw, 0, 255);
+
+                    $dist     = levenshtein($s1, $s2);
+                    $levScore = (1 - ($dist / $maxLen)) * 100.0;
+
+                    similar_text($s1, $s2, $simScore);
+                    $fuzzyScore = max($levScore, (float) $simScore);
+
+                    $bestWordScore = max($bestWordScore, $fuzzyScore);
+                }
+            }
+
+            // Bonus: jika kata query ditemukan di isi jawaban meskipun tidak di judul
+            if ($bestWordScore < 50.0 && str_contains($cleanAnswer, $qw)) {
+                $bestWordScore = max($bestWordScore, 65.0);
+            }
+
+            $totalWordScore += $bestWordScore;
+        }
+
+        return $totalWordScore / count($qWords);
+    }
 }
+

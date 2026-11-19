@@ -9,6 +9,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PertanyaanLanjutanController;
 use App\Http\Middleware\CheckRole;
 
+
 // Redirect halaman utama ke daftar pertanyaan Data Entry
 Route::get('/', [PertanyaanController::class, 'indexMahasiswa'])->name('mahasiswa.index');
 
@@ -85,6 +86,9 @@ Route::prefix('superadmin')->middleware(CheckRole::class . ':super_admin')->grou
 
 Route::get('/mahasiswa/search', [PertanyaanController::class, 'indexMahasiswa'])
     ->name('mahasiswa.search');
+
+Route::get('/api/suggest-faq', [PertanyaanController::class, 'suggestFaq'])
+    ->name('mahasiswa.suggest');
 
 // Mahasiswa mengajukan pertanyaan lanjutan
 Route::get(

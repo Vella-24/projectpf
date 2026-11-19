@@ -83,6 +83,26 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #a91a39;
         }
+
+        /* Khusus scrollbar dropdown saran & isolasi scroll */
+        #suggest-dropdown {
+            overscroll-behavior: contain;
+            -ms-scroll-chaining: none;
+        }
+        #suggest-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+        #suggest-dropdown::-webkit-scrollbar-track {
+            background: #fafafa;
+            border-radius: 0 16px 16px 0;
+        }
+        #suggest-dropdown::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        #suggest-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased min-h-screen flex flex-col justify-between">
@@ -128,12 +148,14 @@
 
     <main class="flex-grow">
         <!-- Hero Section (Lebih Ringkas & Pas di Layar) -->
-        <section class="hero-pattern relative text-white pt-6 pb-14 sm:pt-8 sm:pb-16 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        <section class="hero-pattern relative text-white pt-6 pb-14 sm:pt-8 sm:pb-16 px-4 sm:px-6 lg:px-8">
             <!-- Concentric Circular Lines Decorative Background -->
-            <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full border border-white/10 pointer-events-none hidden lg:block"></div>
-            <div class="absolute -right-48 -top-48 w-[450px] h-[450px] rounded-full border border-white/5 pointer-events-none hidden lg:block"></div>
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full border border-white/10 hidden lg:block"></div>
+                <div class="absolute -right-48 -top-48 w-[450px] h-[450px] rounded-full border border-white/5 hidden lg:block"></div>
+            </div>
 
-            <div class="max-w-3xl mx-auto text-center relative z-10">
+            <div class="max-w-3xl mx-auto text-center relative">
                 <!-- Pill Badge -->
                 <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-white/90 text-[11px] font-semibold tracking-wider uppercase mb-3 sm:mb-4 shadow-xs">
                     <span class="text-amber-300 text-xs">✦</span>
@@ -149,50 +171,55 @@
                 <p class="text-xs sm:text-sm text-rose-100/90 max-w-xl mx-auto font-normal leading-relaxed mb-5 sm:mb-6">
                     Temukan jawaban tepercaya seputar perkuliahan dan layanan kampus dalam hitungan detik.
                 </p>
+                <!--Wrapper-->
+                <div class="relative max-w-2xl mx-auto">
+                    <!-- Search Form -->
+                    <form action="{{ route('mahasiswa.index') }}#hasil-pencarian" method="GET" class="max-w-2xl mx-auto">
+                        <!-- Preserve category filter if active -->
+                        @if(request('kategori_id'))
+                            <input type="hidden" name="kategori_id" value="{{ request('kategori_id') }}">
+                        @endif
+                        @if(request('status'))
+                            <input type="hidden" name="status" value="{{ request('status') }}">
+                        @endif
 
-                <!-- Search Form -->
-                <form action="{{ route('mahasiswa.index') }}#hasil-pencarian" method="GET" class="max-w-2xl mx-auto">
-                    <!-- Preserve category filter if active -->
-                    @if(request('kategori_id'))
-                        <input type="hidden" name="kategori_id" value="{{ request('kategori_id') }}">
-                    @endif
-                    @if(request('status'))
-                        <input type="hidden" name="status" value="{{ request('status') }}">
-                    @endif
-
-                    <div class="bg-white rounded-2xl md:rounded-full p-1.5 pl-4 sm:pl-5 shadow-xl shadow-black/20 flex flex-col sm:flex-row items-center gap-2 border border-white/30 focus-within:ring-3 focus-within:ring-white/30 transition-all">
-                        <div class="flex items-center gap-2.5 w-full">
-                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <input 
-                                type="text" 
-                                name="q" 
-                                value="{{ request('q') }}" 
-                                placeholder='Ketik pertanyaanmu, misalnya "cara mengajukan cuti"' 
-                                class="w-full bg-transparent text-gray-800 placeholder-gray-400 text-xs sm:text-sm focus:outline-none py-1.5"
-                                autocomplete="off"
-                            >
-                            @if(request('q'))
-                                <a href="{{ route('mahasiswa.index', request()->except('q')) }}" class="text-gray-400 hover:text-gray-600 px-2" title="Hapus pencarian">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </a>
-                            @endif
+                        <div class="bg-white rounded-2xl md:rounded-full p-1.5 pl-4 sm:pl-5 shadow-xl shadow-black/20 flex flex-col sm:flex-row items-center gap-2 border border-white/30 focus-within:ring-3 focus-within:ring-white/30 transition-all">
+                            <div class="flex items-center gap-2.5 w-full">
+                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <input 
+                                    type="text" 
+                                    id="search-input"
+                                    name="q" 
+                                    value="{{ request('q') }}" 
+                                    placeholder='Ketik pertanyaanmu, misalnya "cara mengajukan cuti"' 
+                                    class="w-full bg-transparent text-gray-800 placeholder-gray-400 text-xs sm:text-sm focus:outline-none py-1.5"
+                                    autocomplete="off"
+                                >
+                                @if(request('q'))
+                                    <a href="{{ route('mahasiswa.index', request()->except('q')) }}" class="text-gray-400 hover:text-gray-600 px-2" title="Hapus pencarian">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </a>
+                                @endif
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto px-5 py-2.5 sm:px-6 rounded-xl md:rounded-full bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-maroon-base/30 whitespace-nowrap active:scale-95">
+                                Cari Jawaban
+                            </button>
                         </div>
-                        <button type="submit" class="w-full sm:w-auto px-5 py-2.5 sm:px-6 rounded-xl md:rounded-full bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-maroon-base/30 whitespace-nowrap active:scale-95">
-                            Cari Jawaban
-                        </button>
+                    </form>
+                    <div id="suggest-dropdown" class="hidden absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl shadow-black/25 border border-gray-150 max-h-[380px] overflow-y-auto overscroll-contain z-30 text-left">
                     </div>
-                </form>
-
+                </div>
+                
 
             </div>
         </section>
 
         <!-- Topic Categories Bar (Overlapping Card - Lebih Ringkas & Pas di Viewport) -->
-        <section id="topik" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-9 relative z-20 {{ !(request()->filled('q') || request()->filled('kategori_id')) ? 'mb-4 sm:mb-6' : '' }}">
+        <section id="topik" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-9 relative z-10 {{ !(request()->filled('q') || request()->filled('kategori_id')) ? 'mb-4 sm:mb-6' : '' }}">
             <div class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 md:p-5 shadow-lg shadow-gray-200/50 border border-gray-150">
                 @php
                     // Sort by most questions first
@@ -313,7 +340,7 @@
                             }
 
                             // Match Image 1: The very first question is expanded by default
-                            $isOpen = ($index === 0 && !request('q') && !request('kategori_id'));
+                            $isOpen = (request('open') == $item->id) || ($index === 0 && !request('q') && !request('kategori_id'));
                         @endphp
 
                         <div class="faq-item bg-white rounded-xl border border-gray-200/90 shadow-xs hover:border-gray-300 transition-all duration-200 overflow-hidden" id="faq-{{ $item->id }}">
@@ -728,9 +755,114 @@
             if (e.target === staffModal) toggleStaffModal();
         });
 
-        // Initialize on DOM load
-        document.addEventListener('DOMContentLoaded', function() {
+        function escapeHtml(text) {
+            if (!text) return '';
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.toString().replace(/[&<>"']/g, m => map[m]);
+        }
+
+       document.addEventListener('DOMContentLoaded', function() {
             loadNrp();
+
+            // Auto-scroll ke FAQ yang dibuka dari auto-suggest
+            const openId = new URLSearchParams(window.location.search).get('open');
+            if (openId) {
+                const faqEl = document.getElementById('faq-' + openId);
+                if (faqEl) {
+                    setTimeout(() => {
+                        const rect = faqEl.getBoundingClientRect();
+                        const offset = window.pageYOffset + rect.top - 80;
+                        window.scrollTo({ top: offset, behavior: 'smooth' });
+                    }, 300);
+                }
+            }
+
+            const searchInput = document.getElementById('search-input');
+            const suggestDropdown = document.getElementById('suggest-dropdown');
+            let debounceTimer = null;
+
+            if (searchInput && suggestDropdown) {
+                
+                // MENGIZINKAN SCROLL NORMAL DI DROPDOWN & MENCEGAH TEMBUS KE HALAMAN UTAMA
+                suggestDropdown.addEventListener('wheel', function(e) {
+                    const scrollTop = this.scrollTop;
+                    const scrollHeight = this.scrollHeight;
+                    const height = this.clientHeight;
+                    const delta = e.deltaY;
+
+                    // Izinkan scroll ke bawah selama belum di ujung bawah (dengan buffer 1px untuk subpixel)
+                    if (delta > 0 && scrollTop + height < scrollHeight - 1) {
+                        e.stopPropagation();
+                        return;
+                    }
+                    // Izinkan scroll ke atas selama belum di ujung atas (dengan buffer 1px)
+                    if (delta < 0 && scrollTop > 1) {
+                        e.stopPropagation();
+                        return;
+                    }
+
+                    // Jika sudah di batas paling atas atau paling bawah, cegah agar background halaman utama tidak ikut bergerak
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    clearTimeout(debounceTimer);
+
+                    if (query.length < 2) {
+                        suggestDropdown.classList.add('hidden');
+                        suggestDropdown.innerHTML = '';
+                        return;
+                    }
+
+                    debounceTimer = setTimeout(() => {
+                        fetch(`{{ route('mahasiswa.suggest') }}?q=${encodeURIComponent(query)}`, {
+                            headers: { 'Accept': 'application/json' }
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.matches && data.matches.length > 0) {
+                                let html = '<ul class="divide-y divide-gray-100">';
+                                data.matches.forEach(item => {
+                                    html += `
+                                        <li>
+                                            <a href="/?q=${encodeURIComponent(item.judul_pertanyaan)}&open=${item.id}#hasil-pencarian" class="block px-5 py-3.5 hover:bg-rose-50/50 transition">
+                                                <p class="text-xs font-bold text-gray-900 line-clamp-1">${escapeHtml(item.judul_pertanyaan)}</p>
+                                                <p class="text-[11px] text-gray-400 line-clamp-1 mt-0.5">${escapeHtml(item.isi_jawaban)}</p>
+                                            </a>
+                                        </li>
+                                    `;
+                                });
+                                html += '</ul>';
+                                suggestDropdown.innerHTML = html;
+                                suggestDropdown.classList.remove('hidden');
+                            } else {
+                                suggestDropdown.innerHTML = `
+                                    <div class="px-5 py-6 text-center">
+                                        <div class="w-10 h-10 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </div>
+                                        <p class="text-xs font-bold text-gray-800">Pertanyaan tidak ditemukan</p>
+                                        <p class="text-[11px] text-gray-400 mt-1">Tidak ada rekomendasi yang sesuai dengan kata kunci "<span class="text-rose-600 font-medium">${escapeHtml(query)}</span>"</p>
+                                    </div>
+                                `;
+                                suggestDropdown.classList.remove('hidden');
+                            }
+                        })
+                        .catch(err => console.error('Gagal memuat saran:', err));
+                    }, 300);
+                });
+
+                // Tutup dropdown jika mengklik di luar area search
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !suggestDropdown.contains(e.target)) {
+                        suggestDropdown.classList.add('hidden');
+                    }
+                });
+            }
         });
     </script>
 </body>
