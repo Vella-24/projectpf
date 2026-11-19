@@ -138,9 +138,14 @@
                             @endif
                         </td>
                         <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#FFF5F6] text-[#741228] border border-rose-100">
-                                {{ $item->kategori->nama_kategori ?? 'Umum' }}
-                            </span>
+                            <div class="flex flex-col gap-1 items-start">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-[#FFF5F6] text-[#741228] border border-rose-100">
+                                    {{ $item->kategori->nama_kategori ?? 'Umum' }}
+                                </span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold {{ $item->badge_class }}">
+                                    {{ $item->nama_fakultas }}
+                                </span>
+                            </div>
                         </td>
                         <td class="py-4 px-6">
                             <p class="font-bold text-gray-800 text-xs">{{ $item->user->name ?? 'Sistem' }}</p>

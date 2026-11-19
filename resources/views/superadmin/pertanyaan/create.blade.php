@@ -102,22 +102,48 @@
                            class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-2xs">
                 </div>
 
-                <!-- Kategori Pertanyaan * -->
-                <div>
-                    <label for="kategori_id" class="block text-xs font-bold text-gray-800 mb-1">
-                        Kategori <span class="text-rose-500">*</span>
-                    </label>
-                    <select id="kategori_id" 
-                            name="kategori_id" 
-                            required 
-                            class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-2xs cursor-pointer">
-                        <option value="">Pilih kategori pertanyaan</option>
-                        @foreach($kategoris as $kat)
-                            <option value="{{ $kat->id }}" {{ old('kategori_id') == $kat->id ? 'selected' : '' }}>
-                                {{ $kat->nama_kategori }}
+                <!-- Grid Kategori & Target Sasaran Fakultas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Kategori Pertanyaan * -->
+                    <div>
+                        <label for="kategori_id" class="block text-xs font-bold text-gray-800 mb-1">
+                            Kategori <span class="text-rose-500">*</span>
+                        </label>
+                        <select id="kategori_id" 
+                                name="kategori_id" 
+                                required 
+                                class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-2xs cursor-pointer">
+                            <option value="">Pilih kategori pertanyaan</option>
+                            @foreach($kategoris as $kat)
+                                <option value="{{ $kat->id }}" {{ old('kategori_id') == $kat->id ? 'selected' : '' }}>
+                                    {{ $kat->nama_kategori }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <!-- Target Sasaran Informasi (Fakultas) -->
+                    <div>
+                        <label for="fakultas" class="block text-xs font-bold text-gray-800 mb-1">
+                            Target Sasaran Fakultas <span class="text-rose-500">*</span>
+                        </label>
+                        <select id="fakultas" 
+                                name="fakultas" 
+                                required
+                                class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-2xs cursor-pointer">
+                            <option value="umum" {{ old('fakultas', 'umum') == 'umum' ? 'selected' : '' }}>
+                                Umum (Semua Fakultas)
                             </option>
-                        @endforeach
-                    </select>
+                            @foreach($daftarFakultas as $kodeFak => $namaFak)
+                                <option value="{{ $kodeFak }}" {{ old('fakultas') == $kodeFak ? 'selected' : '' }}>
+                                    {{ $namaFak }} (Kode: {{ $kodeFak }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-[11px] text-gray-400 mt-1">
+                            Pilih "Umum" untuk kebijakan universitas, atau pilih fakultas tertentu.
+                        </p>
+                    </div>
                 </div>
             </div>
 

@@ -17,6 +17,9 @@
                 $timeString = $p->created_at->format('d M, H:i');
             }
         }
+
+        $isUmum = !$p->fakultas || $p->fakultas === 'umum';
+
         return [
             'id' => $p->id,
             'kategori' => $categoryName,
@@ -33,7 +36,10 @@
             'user' => $authorName,
             'catatan' => $p->catatan_validator ?? '',
             'waktu' => $timeString,
-            'update_url' => route('validator.updateStatus', $p->id)
+            'update_url' => route('validator.updateStatus', $p->id),
+            'fakultas' => $p->fakultas ?? 'umum',
+            'nama_fakultas' => $p->nama_fakultas ?? 'Umum (Semua Mahasiswa)',
+            'is_umum' => $isUmum,
         ];
     })->values();
 
@@ -228,9 +234,31 @@
             </h2>
 
             <!-- Sub Metadata -->
-            <p id="detailMeta" class="text-xs text-gray-400 mb-6">
+            <p id="detailMeta" class="text-xs text-gray-400 mb-4">
                 Diajukan oleh <span class="text-gray-700 font-medium">{{ $firstItem['user'] }}</span> &bull; {{ $firstItem['waktu'] }}
             </p>
+
+            <!-- Info Box: Cakupan Sasaran Fakultas -->
+            <div id="detailFakultasBox" class="mb-5 flex items-start gap-3 p-3.5 rounded-xl border {{ $firstItem['is_umum'] ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200' }}">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ $firstItem['is_umum'] ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600' }}">
+                    @if($firstItem['is_umum'])
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    @else
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>
+                    @endif
+                </div>
+                <div>
+                    <p class="text-[11px] font-extrabold uppercase tracking-wider {{ $firstItem['is_umum'] ? 'text-blue-700' : 'text-amber-700' }} mb-0.5">
+                        Cakupan Sasaran
+                    </p>
+                    <p id="detailFakultasLabel" class="text-xs font-bold {{ $firstItem['is_umum'] ? 'text-blue-800' : 'text-amber-800' }}">
+                        {{ $firstItem['is_umum'] ? '🌐 Umum — Semua Mahasiswa UBAYA' : '🏛️ Khusus ' . $firstItem['nama_fakultas'] }}
+                    </p>
+                    <p id="detailFakultasDesc" class="text-[11px] mt-0.5 {{ $firstItem['is_umum'] ? 'text-blue-600' : 'text-amber-700' }}">
+                        {{ $firstItem['is_umum'] ? 'Berlaku untuk seluruh mahasiswa UBAYA dari semua fakultas.' : 'Pastikan isi jawaban sesuai kebijakan ' . $firstItem['nama_fakultas'] . '.' }}
+                    </p>
+                </div>
+            </div>
 
             <!-- Informasi siapa yang mengambil review -->
             <div id="detailValidatorInfo" class="mb-5 text-sm"></div>
@@ -336,6 +364,36 @@
 
         const elMeta = document.getElementById('detailMeta');
         if (elMeta) elMeta.innerHTML = `Diajukan oleh <span class="text-gray-700 font-medium">${item.user}</span> &bull; ${item.waktu}`;
+
+        // Update info box cakupan sasaran fakultas
+        const fakultasBox = document.getElementById('detailFakultasBox');
+        const fakultasLabel = document.getElementById('detailFakultasLabel');
+        const fakultasDesc = document.getElementById('detailFakultasDesc');
+
+        if (fakultasBox && fakultasLabel && fakultasDesc) {
+            const isUmum = item.is_umum;
+
+            // Update warna box
+            fakultasBox.className = `mb-5 flex items-start gap-3 p-3.5 rounded-xl border ${isUmum ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`;
+
+            // Update icon container
+            const iconDiv = fakultasBox.querySelector('div:first-child');
+            if (iconDiv) {
+                iconDiv.className = `w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isUmum ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`;
+            }
+
+            // Update label text dan warna
+            fakultasLabel.className = `text-xs font-bold ${isUmum ? 'text-blue-800' : 'text-amber-800'}`;
+            fakultasLabel.textContent = isUmum
+                ? '🌐 Umum — Semua Mahasiswa UBAYA'
+                : '🏛️ Khusus ' + item.nama_fakultas;
+
+            // Update desc text dan warna
+            fakultasDesc.className = `text-[11px] mt-0.5 ${isUmum ? 'text-blue-600' : 'text-amber-700'}`;
+            fakultasDesc.textContent = isUmum
+                ? 'Berlaku untuk seluruh mahasiswa UBAYA dari semua fakultas.'
+                : 'Pastikan isi jawaban sesuai kebijakan ' + item.nama_fakultas + '.';
+        }
 
         const elJawaban = document.getElementById('detailJawaban');
         if (elJawaban) elJawaban.textContent = item.jawaban;

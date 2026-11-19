@@ -168,23 +168,73 @@
                 </h1>
 
                 <!-- Subtitle -->
-                <p class="text-xs sm:text-sm text-rose-100/90 max-w-xl mx-auto font-normal leading-relaxed mb-5 sm:mb-6">
+                <p class="text-xs sm:text-sm text-rose-100/90 max-w-xl mx-auto font-normal leading-relaxed mb-4 sm:mb-5">
                     Temukan jawaban tepercaya seputar perkuliahan dan layanan kampus dalam hitungan detik.
                 </p>
+
+                <!-- Kolom Kecil Personalisasi NRP di Atas Search Bar -->
+                <div class="mb-4">
+                    @if(!$fakultasMahasiswa)
+                        <!-- Kondisi 1: Sebelum Memasukkan NRP -->
+                        <div class="inline-flex flex-col sm:flex-row items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs shadow-xs max-w-xl mx-auto">
+                            <div class="flex items-center gap-1.5 text-white/90 font-medium px-1">
+                                <svg class="w-3.5 h-3.5 text-amber-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z"/>
+                                </svg>
+                                <span class="text-[11.5px]">Masukkan NRP untuk menyesuaikan informasi dengan fakultasmu:</span>
+                            </div>
+                            <form id="form-quick-nrp" onsubmit="handleQuickNrp(event)" class="flex items-center gap-1.5 w-full sm:w-auto">
+                                <input 
+                                    type="text" 
+                                    id="quick-nrp-input" 
+                                    maxlength="9" 
+                                    placeholder="Ketik NRP..." 
+                                    value=""
+                                    class="w-full sm:w-28 px-2.5 py-1 text-xs rounded-xl bg-white text-gray-900 placeholder-gray-400 font-bold focus:outline-none focus:ring-2 focus:ring-amber-300"
+                                >
+                                <button type="submit" class="px-3 py-1 rounded-xl bg-[#7C1224] hover:bg-[#5C0A19] text-white font-bold text-xs transition active:scale-95 shadow-xs whitespace-nowrap">
+                                    Terapkan
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <!-- Kondisi 2: Setelah Memasukkan NRP (Mode Personalisasi Aktif) -->
+                        <div class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-emerald-600/30 backdrop-blur-md border border-emerald-300/40 text-white text-xs shadow-xs">
+                            <span class="flex items-center gap-1.5 font-bold text-emerald-100">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Mode Personalisasi: <strong class="text-white font-black">{{ $namaFakultasMahasiswa }}</strong></span>
+                                <span class="text-white/80 font-mono text-[11px]">(NRP {{ substr($nrp, 0, 5) . '****' }})</span>
+                            </span>
+                            <div class="flex items-center gap-1.5 ml-1">
+                                <button type="button" onclick="openNrpModal()" class="px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold transition shadow-2xs">
+                                    Ganti NRP
+                                </button>
+                                <button type="button" onclick="clearStoredNrp()" class="px-2.5 py-1 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 text-white text-[11px] font-bold transition shadow-2xs" title="Hapus NRP dan kembali ke informasi umum">
+                                    Hapus NRP
+                                </button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
                 <!--Wrapper-->
                 <div class="relative max-w-2xl mx-auto">
                     <!-- Search Form -->
                     <form action="{{ route('mahasiswa.index') }}#hasil-pencarian" method="GET" class="max-w-2xl mx-auto">
-                        <!-- Preserve category filter if active -->
+                        <!-- Preserve parameters -->
                         @if(request('kategori_id'))
                             <input type="hidden" name="kategori_id" value="{{ request('kategori_id') }}">
                         @endif
-                        @if(request('status'))
-                            <input type="hidden" name="status" value="{{ request('status') }}">
+                        @if($nrp)
+                            <input type="hidden" name="nrp" value="{{ $nrp }}">
+                        @endif
+                        @if(request('tampilkan_semua'))
+                            <input type="hidden" name="tampilkan_semua" value="{{ request('tampilkan_semua') }}">
                         @endif
 
                         <div class="bg-white rounded-2xl md:rounded-full p-1.5 pl-4 sm:pl-5 shadow-xl shadow-black/20 flex flex-col sm:flex-row items-center gap-2 border border-white/30 focus-within:ring-3 focus-within:ring-white/30 transition-all">
-                            <div class="flex items-center gap-2.5 w-full">
+                            <!-- Search Input -->
+                            <div class="flex items-center gap-2.5 w-full flex-grow">
                                 <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
@@ -205,6 +255,7 @@
                                     </a>
                                 @endif
                             </div>
+
                             <button type="submit" class="w-full sm:w-auto px-5 py-2.5 sm:px-6 rounded-xl md:rounded-full bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-xs sm:text-sm transition-all duration-200 shadow-md shadow-maroon-base/30 whitespace-nowrap active:scale-95">
                                 Cari Jawaban
                             </button>
@@ -273,17 +324,19 @@
             </div>
         </section>
 
-        @if(request()->filled('q') || request()->filled('kategori_id'))
-        <!-- Main Content Area: Questions & Sidebar (Hanya muncul saat mahasiswa mencari atau memilih topik) -->
+        @if(request()->filled('q') || request()->filled('kategori_id') || (request()->filled('fakultas') && request('fakultas') !== 'semua'))
+        <!-- Main Content Area: Questions & Sidebar (Muncul saat mahasiswa mencari, memilih topik, atau filter fakultas) -->
         <section id="hasil-pencarian" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20 scroll-mt-32">
             <!-- Section Header -->
-            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-gray-200/70 mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-gray-200/70 mb-6">
                 <div>
                     <span class="text-xs font-black tracking-[0.2em] uppercase text-[#8B1538] block mb-1">
                         @if(request()->filled('q'))
                             HASIL PENCARIAN
-                        @else
+                        @elseif(request()->filled('kategori_id'))
                             KATEGORI TOPIK
+                        @else
+                            FILTER FAKULTAS
                         @endif
                     </span>
                     <h2 class="text-base sm:text-lg font-extrabold text-gray-900 tracking-tight">
@@ -294,13 +347,15 @@
                                 $selectedCat = $kategoris->firstWhere('id', request('kategori_id'));
                             @endphp
                             Pertanyaan seputar <span class="text-[#7C1224]">{{ $selectedCat->nama_kategori ?? 'Topik Terpilih' }}</span>
+                        @elseif(request()->filled('fakultas') && request('fakultas') !== 'semua')
+                            Pertanyaan untuk <span class="text-[#7C1224]">{{ \App\Helpers\FakultasHelper::getNamaByKode(request('fakultas'), true) }}</span>
                         @else
                             Jawaban yang mungkin kamu cari
                         @endif
                     </h2>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('mahasiswa.index') }}" class="text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5" title="Tutup hasil dan bersihkan pencarian">
+                    <a href="{{ route('mahasiswa.index', request()->only(['nrp'])) }}" class="text-xs font-semibold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3.5 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5" title="Tutup hasil dan bersihkan pencarian">
                         <span>Tutup Hasil</span>
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -311,6 +366,8 @@
                     </span>
                 </div>
             </div>
+
+            <!-- Mode Personalisasi Banner & Toggle Aturan Fakultas Lain -->
 
             <!-- Two-Column Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -356,9 +413,22 @@
                                         {!! $iconSvg !!}
                                     </div>
                                     <div class="min-w-0">
-                                        <span class="text-[10px] font-bold text-[#8B1538] uppercase tracking-wider block mb-0.5">
-                                            {{ strtoupper($catName) }}
-                                        </span>
+                                        <!-- Label Kategori & Label Fakultas -->
+                                        <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                            <span class="text-[10px] font-bold text-[#8B1538] uppercase tracking-wider">
+                                                {{ strtoupper($catName) }}
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $item->badge_class }}">
+                                                @if(empty($item->fakultas) || $item->fakultas === 'umum')
+                                                    🏛️ Umum
+                                                @else
+                                                    🎓 {{ $item->nama_fakultas }}
+                                                @endif
+                                            </span>
+                                            @if($fakultasMahasiswa && $item->fakultas === $fakultasMahasiswa)
+                                                {{-- badge "Khusus Fakultasmu" dihapus --}}
+                                            @endif
+                                        </div>
                                         <h3 class="text-sm sm:text-base font-bold text-gray-900 group-hover:text-[#7C1224] transition-colors leading-snug">
                                             {{ $item->judul_pertanyaan }}
                                         </h3>
@@ -451,39 +521,8 @@
 
                 <!-- Right Column: Sidebar (4 cols) -->
                 <aside class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-                    
-                    <!-- Sidebar Card 1: Student NRP Profile Card -->
-                    <div class="bg-gradient-to-b from-white to-[#FDF8F9] rounded-3xl p-6 sm:p-7 border border-gray-200/90 shadow-xs relative overflow-hidden">
-                        <div class="flex items-center justify-between mb-5">
-                            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-[#7C1224] flex items-center justify-center shadow-xs">
-                                <!-- Graduation Cap Icon -->
-                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z"/>
-                                </svg>
-                            </div>
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span>NRP Aktif</span>
-                            </div>
-                        </div>
 
-                        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight leading-snug">
-                            Halo, mahasiswa <span id="studentNrpDisplay">789</span>
-                        </h3>
-                        <p class="text-sm text-gray-500 mt-2 leading-relaxed">
-                            Informasi saat ini dipersonalisasi untuk NRP <span id="studentNrpMasked">••••••789</span>.
-                        </p>
-
-                        <button 
-                            type="button" 
-                            onclick="openNrpModal()"
-                            class="w-full mt-6 py-2.5 px-4 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl text-sm font-bold text-gray-700 transition shadow-xs flex items-center justify-center gap-2 active:scale-98"
-                        >
-                            <span>Ganti NRP</span>
-                        </button>
-                    </div>
-
-                    <!-- Sidebar Card 2: Question Prompt CTA Card -->
+                    <!-- Sidebar Card: Question Prompt CTA Card -->
                     <div class="bg-white rounded-3xl p-7 border border-gray-200/90 shadow-xs text-center flex flex-col items-center">
                         <!-- Thick Burgundy Question Mark Circle Illustration -->
                         <div class="w-36 h-36 mx-auto my-3 flex items-center justify-center">
@@ -532,7 +571,7 @@
         </div>
     </footer>
 
-    <!-- Modal: Ganti NRP Mahasiswa -->
+    <!-- Modal: Ganti / Masukkan NRP Mahasiswa -->
     <div id="modalNrp" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 hidden">
         <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-150 transform transition-all">
             <div class="flex items-center justify-between mb-4">
@@ -549,28 +588,38 @@
             </div>
             
             <h3 class="text-xl font-bold text-gray-900">Personalisasi NRP Mahasiswa</h3>
-            <p class="text-sm text-gray-500 mt-1">
-                Masukkan NRP kamu untuk menyesuaikan informasi dan riwayat layanan studi.
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                Ketik 9 digit NRP tanpa kata sandi. Sistem secara otomatis mengenali fakultasmu dari 2 digit awal NRP.
             </p>
 
             <form onsubmit="saveNrp(event)" class="mt-5 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">Nomor Registrasi Pokok (NRP)</label>
+                    <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                        Nomor Registrasi Pokok (NRP) 9 Digit
+                    </label>
                     <input 
                         type="text" 
                         id="inputNrp" 
-                        placeholder="Contoh: 160421789" 
-                        maxlength="15" 
+                        placeholder="Ketik 9 digit NRP..." 
+                        maxlength="9" 
                         required 
-                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C1224] text-gray-900 font-semibold"
+                        value="{{ $nrp }}"
+                        oninput="previewFakultasFromInput(this.value)"
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#7C1224] text-gray-900 font-bold tracking-wider text-sm"
                     >
+                    <p id="nrp-preview-text" class="text-xs mt-1.5 text-gray-600 font-medium min-h-[18px]">
+                        @if($fakultasMahasiswa)
+                            🎓 Terdeteksi: <strong class="text-emerald-700">{{ $namaFakultasMahasiswa }}</strong>
+                        @endif
+                    </p>
                 </div>
+
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeNrpModal()" class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition">
+                    <button type="button" onclick="closeNrpModal()" class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-semibold text-xs hover:bg-gray-50 transition">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#7C1224] hover:bg-[#5C0A19] text-white font-semibold text-sm transition shadow-sm">
-                        Simpan NRP
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#7C1224] hover:bg-[#5C0A19] text-white font-bold text-xs transition shadow-sm">
+                        Simpan & Terapkan
                     </button>
                 </div>
             </form>
@@ -659,28 +708,73 @@
             }
         }
 
-        // Student NRP Personalization
-        function loadNrp() {
-            const savedNrp = localStorage.getItem('askubaya_nrp') || '789';
-            updateNrpUI(savedNrp);
+        // Mapping 2 Digit Awal NRP ke Nama Fakultas
+        const facultyMapping = {
+            '11': 'Fakultas Farmasi',
+            '12': 'Fakultas Hukum',
+            '13': 'Fakultas Bisnis dan Ekonomika',
+            '14': 'Politeknik Ubaya',
+            '15': 'Fakultas Psikologi',
+            '16': 'Fakultas Teknik',
+            '17': 'Fakultas Teknobiologi',
+            '18': 'Fakultas Industri Kreatif',
+            '19': 'Fakultas Kedokteran'
+        };
+
+        function getFacultyNameFromNrp(nrp) {
+            if (!nrp) return null;
+            const clean = nrp.toString().replace(/\D/g, '');
+            if (clean.length >= 2) {
+                const prefix = clean.substring(0, 2);
+                return facultyMapping[prefix] || null;
+            }
+            return null;
         }
 
-        function updateNrpUI(nrp) {
-            const last3 = nrp.length >= 3 ? nrp.slice(-3) : nrp;
-            const masked = nrp.length > 3 ? '••••••' + last3 : nrp;
+        function previewFakultasFromInput(val) {
+            const previewEl = document.getElementById('nrp-preview-text');
+            if (!previewEl) return;
+            const clean = val.replace(/\D/g, '');
+            const fac = getFacultyNameFromNrp(clean);
+            if (fac) {
+                previewEl.innerHTML = `🎓 Terdeteksi: <strong class="text-emerald-700 font-bold">${fac}</strong>`;
+            } else if (clean.length >= 2) {
+                previewEl.innerHTML = `<span class="text-rose-600 font-semibold">⚠️ Awalan "${clean.substring(0, 2)}" tidak terdaftar sebagai kode fakultas</span>`;
+            } else {
+                previewEl.innerHTML = '';
+            }
+        }
 
-            const displayEl = document.getElementById('studentNrpDisplay');
-            const maskedEl = document.getElementById('studentNrpMasked');
+        function handleQuickNrp(event) {
+            event.preventDefault();
+            const input = document.getElementById('quick-nrp-input');
+            const val = input ? input.value.trim().replace(/\D/g, '') : '';
+            if (val.length < 2) {
+                showNotification('Mohon masukkan minimal 2 digit awal NRP');
+                return;
+            }
+            const fac = getFacultyNameFromNrp(val);
+            if (!fac) {
+                showNotification(`Awalan "${val.substring(0, 2)}" tidak dikenali sebagai kode fakultas`);
+                return;
+            }
 
-            if (displayEl) displayEl.innerText = last3;
-            if (maskedEl) maskedEl.innerText = masked;
+            localStorage.setItem('askubaya_nrp', val);
+            const url = new URL(window.location.href);
+            url.searchParams.set('nrp', val);
+            url.searchParams.delete('tampilkan_semua');
+            window.location.href = url.toString();
         }
 
         function openNrpModal() {
             const modal = document.getElementById('modalNrp');
             const input = document.getElementById('inputNrp');
-            input.value = localStorage.getItem('askubaya_nrp') || '160421789';
+            if (input) {
+                input.value = '{{ $nrp }}';
+                previewFakultasFromInput(input.value);
+            }
             modal.classList.remove('hidden');
+            if (input) input.focus();
         }
 
         function closeNrpModal() {
@@ -689,13 +783,44 @@
 
         function saveNrp(event) {
             event.preventDefault();
-            const val = document.getElementById('inputNrp').value.trim();
-            if (val) {
-                localStorage.setItem('askubaya_nrp', val);
-                updateNrpUI(val);
-                closeNrpModal();
-                showNotification('NRP berhasil diperbarui!');
+            const input = document.getElementById('inputNrp');
+            const val = input ? input.value.trim().replace(/\D/g, '') : '';
+            if (val.length < 2) {
+                showNotification('Mohon masukkan minimal 2 digit awal NRP');
+                return;
             }
+            const fac = getFacultyNameFromNrp(val);
+            if (!fac) {
+                showNotification(`Awalan "${val.substring(0, 2)}" tidak dikenali sebagai kode fakultas`);
+                return;
+            }
+
+            localStorage.setItem('askubaya_nrp', val);
+            closeNrpModal();
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('nrp', val);
+            url.searchParams.delete('tampilkan_semua');
+            window.location.href = url.toString();
+        }
+
+        function clearStoredNrp() {
+            localStorage.removeItem('askubaya_nrp');
+            const url = new URL(window.location.href);
+            url.searchParams.delete('nrp');
+            url.searchParams.delete('tampilkan_semua');
+            window.location.href = url.toString();
+        }
+
+        function loadNrp() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlNrp = urlParams.get('nrp');
+
+            if (urlNrp) {
+                localStorage.setItem('askubaya_nrp', urlNrp);
+            }
+            // Sengaja TIDAK mengisi quick-nrp-input dari localStorage
+            // agar input selalu kosong saat halaman baru dimuat tanpa NRP di URL
         }
 
         // Staff Portal Modal
@@ -817,7 +942,10 @@
                     }
 
                     debounceTimer = setTimeout(() => {
-                        fetch(`{{ route('mahasiswa.suggest') }}?q=${encodeURIComponent(query)}`, {
+                        const currentNrp = new URLSearchParams(window.location.search).get('nrp') || localStorage.getItem('askubaya_nrp') || '';
+                        const nrpQueryParam = currentNrp ? `&nrp=${encodeURIComponent(currentNrp)}` : '';
+
+                        fetch(`{{ route('mahasiswa.suggest') }}?q=${encodeURIComponent(query)}${nrpQueryParam}`, {
                             headers: { 'Accept': 'application/json' }
                         })
                         .then(res => res.json())
@@ -825,10 +953,14 @@
                             if (data.matches && data.matches.length > 0) {
                                 let html = '<ul class="divide-y divide-gray-100">';
                                 data.matches.forEach(item => {
+                                    const facLabel = item.nama_fakultas ? `<span class="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200 ml-1.5">${escapeHtml(item.nama_fakultas)}</span>` : '';
                                     html += `
                                         <li>
-                                            <a href="/?q=${encodeURIComponent(item.judul_pertanyaan)}&open=${item.id}#hasil-pencarian" class="block px-5 py-3.5 hover:bg-rose-50/50 transition">
-                                                <p class="text-xs font-bold text-gray-900 line-clamp-1">${escapeHtml(item.judul_pertanyaan)}</p>
+                                            <a href="/?q=${encodeURIComponent(item.judul_pertanyaan)}&open=${item.id}${nrpQueryParam}#hasil-pencarian" class="block px-5 py-3 hover:bg-rose-50/50 transition">
+                                                <div class="flex items-center gap-1">
+                                                    <p class="text-xs font-bold text-gray-900 line-clamp-1">${escapeHtml(item.judul_pertanyaan)}</p>
+                                                    ${facLabel}
+                                                </div>
                                                 <p class="text-[11px] text-gray-400 line-clamp-1 mt-0.5">${escapeHtml(item.isi_jawaban)}</p>
                                             </a>
                                         </li>

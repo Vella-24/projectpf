@@ -261,11 +261,16 @@
                                 </p>
                             </td>
 
-                            <!-- Kategori -->
+                            <!-- Kategori & Sasaran -->
                             <td class="py-4 px-4 whitespace-nowrap text-gray-600 font-medium">
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
-                                    {{ $item->kategori->nama_kategori ?? '-' }}
-                                </span>
+                                <div class="flex flex-col gap-1 items-start">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px] font-medium">
+                                        {{ $item->kategori->nama_kategori ?? '-' }}
+                                    </span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[10px] font-bold {{ $item->badge_class }}">
+                                        {{ $item->nama_fakultas }}
+                                    </span>
+                                </div>
                             </td>
 
                             <!-- Status Badge dengan Titik Warna (Dot) -->

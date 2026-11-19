@@ -73,8 +73,9 @@ class PertanyaanController extends Controller
     {
         $kategoris = Kategori::orderBy('nama_kategori')->get();
         $tags = Tag::orderBy('nama_tag')->get();
+        $daftarFakultas = \App\Helpers\FakultasHelper::getAll();
 
-        return view('pertanyaan.create', compact('kategoris', 'tags'));
+        return view('pertanyaan.create', compact('kategoris', 'tags', 'daftarFakultas'));
     }
 
     /**
@@ -84,6 +85,7 @@ class PertanyaanController extends Controller
     {
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
+            'fakultas' => 'nullable|string|in:umum,11,12,13,14,15,16,17,18,19',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
             'status' => 'required|in:draft,menunggu_validasi',
@@ -96,6 +98,8 @@ class PertanyaanController extends Controller
             'isi_jawaban.required' => 'Isi jawaban resmi wajib diisi.',
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
+
+        $validated['fakultas'] = $validated['fakultas'] ?? 'umum';
 
         // Cek kemiripan pertanyaan di server-side (mencegah bypass)
         $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan']);
@@ -129,7 +133,11 @@ class PertanyaanController extends Controller
             $idTags[] = $tag->id;
         }
         $pertanyaan->tags()->sync(array_unique($idTags)); //simpen relasi ke tble pertanyaan_tag
-        $pertanyaan->searchable();
+        try {
+            $pertanyaan->searchable();
+        } catch (\Throwable $e) {
+            // Meilisearch offline, simpan ke database tetap berhasil
+        }
 
         $pesan = $validated['status'] === 'draft'
         ? 'Pertanyaan berhasil disimpan sebagai draft.'
@@ -158,10 +166,10 @@ class PertanyaanController extends Controller
         $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
         $kategoris = Kategori::orderBy('nama_kategori')->get();
         $tags = Tag::orderBy('nama_tag')->get();
+        $daftarFakultas = \App\Helpers\FakultasHelper::getAll();
         $pertanyaan->load('tags');
 
-
-        return view('pertanyaan.edit', compact('pertanyaan', 'kategoris', 'tags'));
+        return view('pertanyaan.edit', compact('pertanyaan', 'kategoris', 'tags', 'daftarFakultas'));
     }
 
     /**
@@ -173,6 +181,7 @@ class PertanyaanController extends Controller
 
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
+            'fakultas' => 'nullable|string|in:umum,11,12,13,14,15,16,17,18,19',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
             'status' => 'required|in:draft,menunggu_validasi',
@@ -185,6 +194,8 @@ class PertanyaanController extends Controller
             'isi_jawaban.required' => 'Isi jawaban resmi wajib diisi.',
             'status.required' => 'Status pertanyaan wajib dipilih.',
         ]);
+
+        $validated['fakultas'] = $validated['fakultas'] ?? 'umum';
 
         // Cek kemiripan pertanyaan di server-side (mencegah bypass), kecualikan pertanyaan saat ini
         $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan'], $pertanyaan->id);
@@ -221,7 +232,11 @@ class PertanyaanController extends Controller
 
         //ini bwat hubungkan pertanyaan dengan tag yang dipilih
         $pertanyaan->tags()->sync($idTags);
-        $pertanyaan->searchable();
+        try {
+            $pertanyaan->searchable();
+        } catch (\Throwable $e) {
+            // Meilisearch offline, update database tetap berhasil
+        }
 
         //ini bwat klo cari tag lama yang sudah dilepas dari pertanyaan ini
         $tagDihapus = array_diff($tagLama, $idTags);
@@ -266,35 +281,41 @@ class PertanyaanController extends Controller
 
     public function indexMahasiswa(Request $request)
     {
-        $kategoris = Kategori::withCount(['pertanyaans' => function ($q) {
+        $daftarFakultas = \App\Helpers\FakultasHelper::getAll();
+
+        $nrp = trim((string) $request->get('nrp', ''));
+        $fakultasMahasiswa = \App\Helpers\FakultasHelper::getKodeFromNrp($nrp);
+        $namaFakultasMahasiswa = $fakultasMahasiswa ? \App\Helpers\FakultasHelper::getNamaByKode($fakultasMahasiswa) : null;
+        $infoMahasiswa = \App\Helpers\FakultasHelper::getInfoFromNrp($nrp);
+        $tampilkanSemua = $request->boolean('tampilkan_semua');
+        $filterFakultas = $request->get('fakultas');
+
+        // Hitung jumlah artikel per kategori, disesuaikan dengan personalisasi fakultas
+        $kategoris = Kategori::withCount(['pertanyaans' => function ($q) use ($fakultasMahasiswa, $tampilkanSemua) {
             $q->where('status', 'disetujui');
+            if ($fakultasMahasiswa && !$tampilkanSemua) {
+                // Mode personalisasi: hitung hanya artikel untuk fakultas mahasiswa + umum
+                $q->where(function ($q2) use ($fakultasMahasiswa) {
+                    $q2->where('fakultas', $fakultasMahasiswa)
+                       ->orWhere('fakultas', 'umum')
+                       ->orWhereNull('fakultas');
+                });
+            }
         }])->orderBy('nama_kategori')->get();
 
-        // Jika terdapat pencarian kata kunci, gunakan Meilisearch melalui Laravel Scout
-        if ($request->filled('q')) {
-            $searchTerm = trim($request->q);
+        $isFiltering = $request->filled('q') || $request->filled('kategori_id') || ($request->filled('fakultas') && $request->fakultas !== 'semua');
 
-            try {
-                $scoutQuery = Pertanyaan::search($searchTerm);
+        $jumlahFakultasLain = 0;
 
-                if ($request->filled('kategori_id')) {
-                    $scoutQuery->where('kategori_id', (int) $request->kategori_id);
-                }
+        if ($isFiltering) {
+            $query = Pertanyaan::with(['kategori', 'user', 'tags'])->where('status', 'disetujui');
 
-                $pertanyaans = $scoutQuery->query(function ($query) {
-                    $query->with(['kategori', 'user', 'tags'])
-                        ->where('status', 'disetujui');
-                })->paginate(10)->withQueryString();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Meilisearch search error, falling back to database: ' . $e->getMessage());
+            if ($request->filled('kategori_id')) {
+                $query->where('kategori_id', $request->kategori_id);
+            }
 
-                $query = Pertanyaan::with(['kategori', 'user', 'tags'])->latest();
-                $query->where('status', 'disetujui');
-
-                if ($request->filled('kategori_id')) {
-                    $query->where('kategori_id', $request->kategori_id);
-                }
-
+            if ($request->filled('q')) {
+                $searchTerm = trim($request->q);
                 $query->where(function ($q) use ($searchTerm) {
                     $q->where('judul_pertanyaan', 'like', "%{$searchTerm}%")
                     ->orWhere('isi_jawaban', 'like', "%{$searchTerm}%")
@@ -302,20 +323,94 @@ class PertanyaanController extends Controller
                         $tagQuery->where('nama_tag', 'like', "%{$searchTerm}%");
                     });
                 });
-
-                $pertanyaans = $query->paginate(10)->withQueryString();
             }
-        } elseif ($request->filled('kategori_id')) {
-            $query = Pertanyaan::with(['kategori', 'user', 'tags'])->latest();
-            $query->where('status', 'disetujui');
-            $query->where('kategori_id', $request->kategori_id);
+
+            // Hitung jumlah jawaban dari fakultas lain yang disembunyikan secara default saat personalisasi aktif
+            if ($fakultasMahasiswa && !$tampilkanSemua) {
+                $jumlahFakultasLain = (clone $query)
+                    ->where('fakultas', '!=', $fakultasMahasiswa)
+                    ->where('fakultas', '!=', 'umum')
+                    ->whereNotNull('fakultas')
+                    ->count();
+            }
+
+            // Terapkan penyaringan & pengurutan personalisasi fakultas
+            $this->applyPersonalisasiQuery($query, $request);
+
             $pertanyaans = $query->paginate(10)->withQueryString();
         } else {
             // Awal buka: belum melakukan pencarian, tidak memuat daftar pertanyaan
             $pertanyaans = Pertanyaan::whereRaw('1 = 0')->paginate(10);
         }
 
-        return view('mahasiswa.index', compact('pertanyaans', 'kategoris'));
+        return view('mahasiswa.index', compact(
+            'pertanyaans',
+            'kategoris',
+            'daftarFakultas',
+            'nrp',
+            'fakultasMahasiswa',
+            'namaFakultasMahasiswa',
+            'infoMahasiswa',
+            'tampilkanSemua',
+            'filterFakultas',
+            'jumlahFakultasLain'
+        ));
+    }
+
+    /**
+     * Menerapkan logika personalisasi dan filter cakupan fakultas pada query
+     */
+    protected function applyPersonalisasiQuery($query, Request $request): void
+    {
+        $nrp = trim((string) $request->get('nrp', ''));
+        $fakultasMahasiswa = \App\Helpers\FakultasHelper::getKodeFromNrp($nrp);
+        $tampilkanSemua = $request->boolean('tampilkan_semua');
+        $filterFakultas = $request->get('fakultas');
+
+        if ($fakultasMahasiswa) {
+            // Mode personalisasi aktif via NRP
+            if (!$tampilkanSemua) {
+                // Sembunyikan aturan khusus fakultas lain, hanya tampilkan fakultas mahasiswa dan Umum
+                $query->where(function ($q) use ($fakultasMahasiswa) {
+                    $q->where('fakultas', $fakultasMahasiswa)
+                      ->orWhere('fakultas', 'umum')
+                      ->orWhereNull('fakultas');
+                });
+            }
+
+            // Urutkan: Jawaban khusus fakultas mahasiswa di posisi teratas (0), lalu Umum (1), lalu fakultas lain (2)
+            $query->orderByRaw("
+                CASE 
+                    WHEN fakultas = ? THEN 0 
+                    WHEN fakultas = 'umum' OR fakultas IS NULL THEN 1 
+                    ELSE 2 
+                END ASC
+            ", [$fakultasMahasiswa]);
+        } else {
+            // Mode non-NRP: periksa pilihan filter manual dari mahasiswa jika ada
+            if (!empty($filterFakultas) && $filterFakultas !== 'semua') {
+                if ($filterFakultas === 'umum') {
+                    $query->where(function ($q) {
+                        $q->where('fakultas', 'umum')->orWhereNull('fakultas');
+                    });
+                } else {
+                    $query->where(function ($q) use ($filterFakultas) {
+                        $q->where('fakultas', $filterFakultas)
+                          ->orWhere('fakultas', 'umum')
+                          ->orWhereNull('fakultas');
+                    });
+                    $query->orderByRaw("
+                        CASE 
+                            WHEN fakultas = ? THEN 0 
+                            WHEN fakultas = 'umum' OR fakultas IS NULL THEN 1 
+                            ELSE 2 
+                        END ASC
+                    ", [$filterFakultas]);
+                }
+            }
+        }
+
+        $query->latest('updated_at');
     }
 
     public function search(Request $request)
@@ -524,15 +619,23 @@ class PertanyaanController extends Controller
             return response()->json(['matches' => []]);
         }
 
+        $nrp = trim((string) $request->get('nrp', ''));
+        $fakultasMahasiswa = \App\Helpers\FakultasHelper::getKodeFromNrp($nrp);
+
         // Ambil semua pertanyaan yang berstatus disetujui
         $pertanyaans = Pertanyaan::with('tags')
             ->where('status', 'disetujui')
-            ->get(['id', 'judul_pertanyaan', 'isi_jawaban']);
+            ->get(['id', 'judul_pertanyaan', 'isi_jawaban', 'fakultas']);
 
         $scored = [];
 
         foreach ($pertanyaans as $item) {
             $score = $this->hitungSkorRelevansi($keyword, $item);
+
+            // Beri bobot tambahan untuk pertanyaan yang sesuai dengan fakultas mahasiswa
+            if ($fakultasMahasiswa && $item->fakultas === $fakultasMahasiswa) {
+                $score += 5.0;
+            }
 
             // Ambang batas 50% — cukup rendah untuk menangkap typo berat,
             // tapi cukup tinggi untuk memfilter teks acak/tidak relevan
@@ -566,6 +669,8 @@ class PertanyaanController extends Controller
                 'id'                => $item->id,
                 'judul_pertanyaan'  => $item->judul_pertanyaan,
                 'isi_jawaban'       => \Illuminate\Support\Str::limit(strip_tags($item->isi_jawaban), 100),
+                'fakultas'          => $item->fakultas ?? 'umum',
+                'nama_fakultas'     => $item->nama_fakultas,
             ];
         }, $topMatches);
 

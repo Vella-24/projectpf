@@ -14,6 +14,7 @@ class Pertanyaan extends Model
 
     protected $fillable = [
         'kategori_id',
+        'fakultas',
         'user_id',
         'judul_pertanyaan',
         'isi_jawaban',
@@ -22,6 +23,22 @@ class Pertanyaan extends Model
         'validator_id',
         'review_diambil_pada',
     ];
+
+    /**
+     * Mendapatkan nama fakultas target
+     */
+    public function getNamaFakultasAttribute(): string
+    {
+        return \App\Helpers\FakultasHelper::getNamaByKode($this->fakultas);
+    }
+
+    /**
+     * Mendapatkan class styling badge fakultas
+     */
+    public function getBadgeClassAttribute(): string
+    {
+        return \App\Helpers\FakultasHelper::getBadgeClass($this->fakultas);
+    }
 
     /**
      * Relasi Pertanyaan milik 1 Kategori (many-to-1)
@@ -73,6 +90,7 @@ class Pertanyaan extends Model
             'isi_jawaban' => (string) $this->isi_jawaban,
             'kategori_id' => (int) $this->kategori_id,
             'kategori_nama' => (string) ($this->kategori->nama_kategori ?? ''),
+            'fakultas' => (string) ($this->fakultas ?? 'umum'),
             'tags' => $this->tags ? $this->tags->pluck('nama_tag')->implode(' ') : '',
             'status' => (string) $this->status,
         ];
