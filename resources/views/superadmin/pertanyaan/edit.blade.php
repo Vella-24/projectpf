@@ -28,13 +28,13 @@
             <!-- Tombol Aksi -->
             <div class="flex items-center gap-3">
                 <button type="button" 
-                        onclick="submitDenganStatus('draft')" 
+                        onclick="submitDenganStatus(0)" 
                         class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow cursor-pointer">
                     Simpan Draf
                 </button>
 
                 <button type="button" 
-                        onclick="submitDenganStatus('disetujui')" 
+                        onclick="submitDenganStatus(2)" 
                         class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg cursor-pointer">
                     <svg class="w-4 h-4 text-rose-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

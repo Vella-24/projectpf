@@ -80,8 +80,8 @@
                 <select name="status" 
                         class="w-full py-2.5 px-3 bg-gray-50/70 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-700 font-medium focus:bg-white focus:outline-none focus:border-[#741228] transition cursor-pointer">
                     <option value="">Semua Status</option>
-                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                    <option value="0" {{ (string)request('status') === '0' || request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="2" {{ (string)request('status') === '2' || request('status') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
                 </select>
             </div>
 
@@ -152,20 +152,20 @@
                             <p class="text-[11px] text-gray-400 capitalize">{{ str_replace('_', ' ', $item->user->role ?? 'User') }}</p>
                         </td>
                         <td class="py-4 px-6 text-center">
-                            @if($item->status === 'draft')
+                            @if((int)$item->status === \App\Models\Pertanyaan::DRAFT)
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                                    Draf
+                                    Draft
                                 </span>
-                            @elseif($item->status === 'menunggu_validasi')
+                            @elseif((int)$item->status === \App\Models\Pertanyaan::MENUNGGU_VALIDASI)
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                     Menunggu Validasi
                                 </span>
-                            @elseif($item->status === 'ditolak')
+                            @elseif((int)$item->status === \App\Models\Pertanyaan::DITOLAK)
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                    Ditolak
+                                    Ditolak / Perlu Revisi
                                 </span>
                             @else
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">

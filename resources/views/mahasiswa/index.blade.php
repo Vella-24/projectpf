@@ -683,10 +683,10 @@
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2.5">Filter Berdasarkan Status:</span>
                 <div class="flex flex-wrap gap-2">
                     <a href="{{ route('pertanyaan.index') }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ !request('status') ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">Semua Status</a>
-                    <a href="{{ route('pertanyaan.index', ['status' => 'disetujui']) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ request('status') == 'disetujui' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">Disetujui</a>
-                    <a href="{{ route('pertanyaan.index', ['status' => 'menunggu_validasi']) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ request('status') == 'menunggu_validasi' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100' }}">Menunggu</a>
-                    <a href="{{ route('pertanyaan.index', ['status' => 'draft']) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ request('status') == 'draft' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">Draft</a>
-                    <a href="{{ route('pertanyaan.index', ['status' => 'ditolak']) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ request('status') == 'ditolak' ? 'bg-red-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-100' }}">Ditolak</a>
+                    <a href="{{ route('pertanyaan.index', ['status' => 2]) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ (string)request('status') === '2' || request('status') === 'disetujui' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' }}">Disetujui</a>
+                    <a href="{{ route('pertanyaan.index', ['status' => 1]) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ (string)request('status') === '1' || request('status') === 'menunggu_validasi' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100' }}">Menunggu</a>
+                    <a href="{{ route('pertanyaan.index', ['status' => 0]) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ (string)request('status') === '0' || request('status') === 'draft' ? 'bg-gray-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">Draft</a>
+                    <a href="{{ route('pertanyaan.index', ['status' => 3]) }}" class="px-3 py-1 rounded-full text-xs font-semibold {{ (string)request('status') === '3' || request('status') === 'ditolak' ? 'bg-red-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-100' }}">Ditolak</a>
                 </div>
             </div>
         </div>

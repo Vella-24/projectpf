@@ -13,7 +13,7 @@ class PertanyaanLanjutanController extends Controller
     // Menampilkan halaman pertanyaan lanjutan
     public function create($id)
     {
-        $pertanyaan = Pertanyaan::where('status', 'disetujui')
+        $pertanyaan = Pertanyaan::where('status', Pertanyaan::DISETUJUI)
             ->findOrFail($id);
 
         return view(
@@ -32,14 +32,14 @@ class PertanyaanLanjutanController extends Controller
         ]);
 
         // Pastikan FAQ masih disetujui
-        $faq = Pertanyaan::where('status', 'disetujui')
+        $faq = Pertanyaan::where('status', Pertanyaan::DISETUJUI)
             ->findOrFail($validated['pertanyaan_id']);
 
         PertanyaanLanjutan::create([
             'pertanyaan_id' => $faq->id,
             'email_mahasiswa' => $validated['email_mahasiswa'],
             'isi_pertanyaan' => $validated['isi_pertanyaan'],
-            'status' => 'baru',
+            'status' => PertanyaanLanjutan::BARU,
         ]);
 
         return redirect()
@@ -64,7 +64,10 @@ class PertanyaanLanjutanController extends Controller
 
         // Filter berdasarkan status jika dipilih
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $normalizedStatus = PertanyaanLanjutan::normalizeStatus($request->status);
+            if ($normalizedStatus !== null) {
+                $query->where('status', $normalizedStatus);
+            }
         }
 
         // Pencarian kata kunci jika ada
@@ -85,17 +88,11 @@ class PertanyaanLanjutanController extends Controller
         // Statistik seluruh pertanyaan mahasiswa
         $totalPertanyaan = PertanyaanLanjutan::count();
 
-        $totalBaru = PertanyaanLanjutan::where('status', 'baru')->count();
+        $totalBaru = PertanyaanLanjutan::where('status', PertanyaanLanjutan::BARU)->count();
 
-        $totalDiproses = PertanyaanLanjutan::where(
-            'status',
-            'sedang_ditangani'
-        )->count();
+        $totalDiproses = PertanyaanLanjutan::where('status', PertanyaanLanjutan::SEDANG_DITANGANI)->count();
 
-        $totalDijawab = PertanyaanLanjutan::where(
-            'status',
-            'dijawab'
-        )->count();
+        $totalDijawab = PertanyaanLanjutan::where('status', PertanyaanLanjutan::DIJAWAB)->count();
 
         return view(
             'pertanyaan-lanjutan.index',
@@ -126,13 +123,13 @@ class PertanyaanLanjutanController extends Controller
                 ->firstOrFail();
 
             // Hanya pertanyaan baru yang bisa diambil
-            if ($pertanyaan->status !== 'baru') {
+            if ($pertanyaan->status !== PertanyaanLanjutan::BARU) {
                 return false;
             }
 
             $pertanyaan->update([
                 'data_entry_id' => $userId,
-                'status' => 'sedang_ditangani',
+                'status' => PertanyaanLanjutan::SEDANG_DITANGANI,
                 'diambil_pada' => now(),
             ]);
 
@@ -167,7 +164,7 @@ class PertanyaanLanjutanController extends Controller
         ->findOrFail($id);
 
         // Tugas harus masih bisa dikerjakan
-        if ($tugas->status !== 'sedang_ditangani') {
+        if ($tugas->status !== PertanyaanLanjutan::SEDANG_DITANGANI) {
             return redirect()
                 ->route('pertanyaanLanjutan.index')
                 ->with('error', 'Tugas ini sudah selesai atau ditutup.');
@@ -178,8 +175,8 @@ class PertanyaanLanjutanController extends Controller
         if (
             $tugas->faqBaru &&
             in_array($tugas->faqBaru->status, [
-                'menunggu_validasi',
-                'disetujui'
+                Pertanyaan::MENUNGGU_VALIDASI,
+                Pertanyaan::DISETUJUI
             ])
         ) {
             return redirect()
@@ -211,8 +208,8 @@ class PertanyaanLanjutanController extends Controller
         ]);
 
         $statusBaru = $validated['aksi'] === 'kirim'
-            ? 'menunggu_validasi'
-            : 'draft';
+            ? Pertanyaan::MENUNGGU_VALIDASI
+            : Pertanyaan::DRAFT;
 
         $userId = session('user.id');
 
@@ -230,7 +227,7 @@ class PertanyaanLanjutanController extends Controller
             // Hanya pemilik tugas yang boleh menyimpan
             if (
                 $tugas->data_entry_id != $userId ||
-                $tugas->status !== 'sedang_ditangani'
+                $tugas->status !== PertanyaanLanjutan::SEDANG_DITANGANI
             ) {
                 abort(403, 'Kamu tidak boleh mengubah tugas ini.');
             }
@@ -247,7 +244,7 @@ class PertanyaanLanjutanController extends Controller
 
                 // FAQ yang sudah dikirim atau disetujui
                 // tidak boleh diedit lewat halaman ini
-                if (!in_array($faqBaru->status, ['draft', 'ditolak'])) {
+                if (!in_array($faqBaru->status, [Pertanyaan::DRAFT, Pertanyaan::DITOLAK])) {
                     abort(403, 'FAQ sedang divalidasi atau sudah diterbitkan.');
                 }
 
@@ -301,7 +298,7 @@ class PertanyaanLanjutanController extends Controller
             $faqBaru->tags()->sync(array_unique($idTags));
         });
 
-        if ($statusBaru === 'draft') {
+        if ($statusBaru === Pertanyaan::DRAFT) {
             return redirect()
                 ->route('pertanyaanLanjutan.jawab', $id)
                 ->with('sukses', 'Draft jawaban berhasil disimpan!');
@@ -325,10 +322,10 @@ class PertanyaanLanjutanController extends Controller
         }
 
         $tugas = PertanyaanLanjutan::where('data_entry_id', session('user.id'))
-            ->where('status', 'sedang_ditangani')
+            ->where('status', PertanyaanLanjutan::SEDANG_DITANGANI)
             ->findOrFail($id);
 
-        $tugas->update(['status' => 'ditutup']);
+        $tugas->update(['status' => PertanyaanLanjutan::DITUTUP]);
 
         return redirect()
             ->route('pertanyaanLanjutan.index')

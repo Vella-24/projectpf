@@ -16,7 +16,7 @@
             $timeString = $pertanyaan->created_at->format('d M Y, H:i');
         }
     }
-    $statusLabel = $pertanyaan->status === 'menunggu_validasi' ? 'Menunggu' : ($pertanyaan->status === 'disetujui' ? 'Disetujui' : ($pertanyaan->status === 'ditolak' ? 'Perlu Revisi' : ucwords(str_replace('_', ' ', $pertanyaan->status))));
+    $statusLabel = (int)$pertanyaan->status === \App\Models\Pertanyaan::MENUNGGU_VALIDASI ? 'Menunggu Validasi' : ((int)$pertanyaan->status === \App\Models\Pertanyaan::DISETUJUI ? 'Disetujui' : ((int)$pertanyaan->status === \App\Models\Pertanyaan::DITOLAK ? 'Perlu Revisi' : 'Draft'));
 
     $isUmum = !$pertanyaan->fakultas || $pertanyaan->fakultas === 'umum';
     $fakultasKode = $pertanyaan->fakultas ?? 'umum';
@@ -59,8 +59,8 @@
                         <span>Sasaran: {{ $pertanyaan->nama_fakultas }}</span>
                     </span>
                 </div>
-                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $pertanyaan->status === 'menunggu_validasi' ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ($pertanyaan->status === 'disetujui' ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
-                    <span class="w-1.5 h-1.5 rounded-full {{ $pertanyaan->status === 'menunggu_validasi' ? 'bg-amber-500' : ($pertanyaan->status === 'disetujui' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ (int)$pertanyaan->status === \App\Models\Pertanyaan::MENUNGGU_VALIDASI ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ((int)$pertanyaan->status === \App\Models\Pertanyaan::DISETUJUI ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
+                    <span class="w-1.5 h-1.5 rounded-full {{ (int)$pertanyaan->status === \App\Models\Pertanyaan::MENUNGGU_VALIDASI ? 'bg-amber-500' : ((int)$pertanyaan->status === \App\Models\Pertanyaan::DISETUJUI ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
                     {{ $statusLabel }}
                 </span>
             </div>
@@ -108,7 +108,7 @@
                 @csrf
                 @method('PUT')
                 
-                <input type="hidden" name="status" id="inputStatus" value="disetujui">
+                <input type="hidden" name="status" id="inputStatus" value="2">
 
                 <!-- Catatan untuk Kontributor -->
                 <div class="mb-6">
@@ -122,7 +122,7 @@
 
                 <!-- Action Buttons -->
                 <div class="flex items-center justify-end gap-3 pt-2">
-                    <button type="button" onclick="submitDecision('ditolak')"
+                    <button type="button" onclick="submitDecision(3)"
                             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#FFF1F2] text-[#9F1239] hover:bg-[#FFE4E6] border border-[#FECDD3] transition cursor-pointer shadow-2xs">
                         <svg class="w-4 h-4 text-[#9F1239]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -130,7 +130,7 @@
                         <span>Minta Revisi</span>
                     </button>
 
-                    <button type="button" onclick="submitDecision('disetujui')"
+                    <button type="button" onclick="submitDecision(2)"
                             class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-[#741228] hover:bg-[#5e0d1f] text-white transition cursor-pointer shadow-sm">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -147,7 +147,7 @@
 <script>
     function submitDecision(status) {
         document.getElementById('inputStatus').value = status;
-        if (status === 'ditolak') {
+        if (status === 'ditolak' || status === 3 || status === '3') {
             const catatan = document.getElementById('detailCatatan').value.trim();
             if (!catatan) {
                 if (!confirm('Anda belum memberikan catatan revisi untuk kontributor. Apakah Anda yakin ingin meminta revisi tanpa catatan?')) {

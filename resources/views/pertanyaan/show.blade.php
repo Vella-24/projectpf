@@ -115,25 +115,25 @@
             <!-- Status -->
             <div class="pb-3 border-b border-gray-50">
                 <span class="text-[11px] text-gray-400 font-medium block mb-1">Status Validasi</span>
-                @if($pertanyaan->status === 'menunggu_validasi')
+                @if((int)$pertanyaan->status === 1)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                         <span class="w-2 h-2 rounded-full bg-amber-500"></span>
                         Menunggu Validasi
                     </span>
-                @elseif($pertanyaan->status === 'disetujui')
+                @elseif((int)$pertanyaan->status === 2)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Telah Diterbitkan
+                        Disetujui
                     </span>
-                @elseif($pertanyaan->status === 'ditolak')
+                @elseif((int)$pertanyaan->status === 3)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                         <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                        Perlu Direvisi
+                        Ditolak / Perlu Revisi
                     </span>
                 @else
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
                         <span class="w-2 h-2 rounded-full bg-gray-400"></span>
-                        Draf
+                        Draft
                     </span>
                 @endif
             </div>

@@ -10,8 +10,8 @@
     <form id="form-pengetahuan" action="{{ route('superadmin.pertanyaan.store') }}" method="POST">
         @csrf
 
-        <!-- Input Tersembunyi untuk Status: Default 'disetujui' (langsung publish tanpa validator) -->
-        <input type="hidden" name="status" id="input-status" value="{{ old('status', 'disetujui') }}">
+        <!-- Input Tersembunyi untuk Status: Default 2 (Disetujui / langsung publish tanpa validator) -->
+        <input type="hidden" name="status" id="input-status" value="{{ old('status', 2) }}">
 
         <!-- Sub-Bar Navigasi & Aksi Tombol -->
         <div class="flex items-center justify-between pb-2">
@@ -28,14 +28,14 @@
             <div class="flex items-center gap-3">
                 <!-- Simpan Draf -->
                 <button type="button" 
-                        onclick="submitDenganStatus('draft')" 
+                        onclick="submitDenganStatus(0)" 
                         class="px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow cursor-pointer">
                     Simpan Draf
                 </button>
 
                 <!-- Publikasikan Langsung (Bypass Validator) -->
                 <button type="button" 
-                        onclick="submitDenganStatus('disetujui')" 
+                        onclick="submitDenganStatus(2)" 
                         class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg cursor-pointer">
                     <svg class="w-4 h-4 text-rose-200" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

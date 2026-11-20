@@ -29,10 +29,16 @@
             'status' => $p->status,
             'validator_id' => $p->validator_id,
             'validator_name' => $p->validator->name ?? null,
-            'boleh_review' => $p->status === 'menunggu_validasi'
+            'boleh_review' => (int) $p->status === 1
             && $p->validator_id !== null
             && (int) $p->validator_id === (int) session('user.id'),
-            'status_label' => $p->status === 'menunggu_validasi' ? 'Menunggu' : ($p->status === 'disetujui' ? 'Disetujui' : ($p->status === 'ditolak' ? 'Perlu Revisi' : ucwords(str_replace('_', ' ', $p->status)))),
+            'status_label' => match ((int) $p->status) {
+                0 => 'Draft',
+                1 => 'Menunggu',
+                2 => 'Disetujui',
+                3 => 'Perlu Revisi',
+                default => 'Tidak Diketahui',
+            },
             'user' => $authorName,
             'catatan' => $p->catatan_validator ?? '',
             'waktu' => $timeString,
@@ -102,9 +108,9 @@
                 <div class="relative">
                     <select id="statusFilter" onchange="handleFilter(this.value)"
                             class="w-full appearance-none bg-gray-50/70 border border-gray-200 rounded-xl py-2.5 px-3.5 text-sm text-gray-700 font-medium focus:bg-white focus:outline-none focus:border-[#741228] focus:ring-2 focus:ring-[#741228]/15 transition cursor-pointer">
-                        <option value="menunggu_validasi" {{ ($status ?? 'menunggu_validasi') === 'menunggu_validasi' ? 'selected' : '' }}>Perlu Ditinjau</option>
-                        <option value="disetujui" {{ ($status ?? '') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="ditolak" {{ ($status ?? '') === 'ditolak' ? 'selected' : '' }}>Perlu Direvisi</option>
+                        <option value=1 {{ ($status ?? 'menunggu_validasi') === 'menunggu_validasi' ? 'selected' : '' }}>Perlu Ditinjau</option>
+                        <option value=2 {{ ($status ?? '') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                        <option value=3 {{ ($status ?? '') === 'ditolak' ? 'selected' : '' }}>Perlu Direvisi</option>
                         <option value="semua" {{ ($status ?? '') === 'semua' ? 'selected' : '' }}>Semua Status</option>
                     </select>
                     <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
@@ -129,8 +135,8 @@
                     
                     <!-- Top Meta: Status pill & Time -->
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $item['status'] === 'menunggu_validasi' ? 'text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md' : ($item['status'] === 'disetujui' ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md' : 'text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md') }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ $item['status'] === 'menunggu_validasi' ? 'bg-amber-500' : ($item['status'] === 'disetujui' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ (int)$item['status'] === 1 ? 'text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md' : ((int)$item['status'] === 2 ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md' : 'text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md') }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ (int)$item['status'] === 1 ? 'bg-amber-500' : ((int)$item['status'] === 2 ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
                             {{ $item['status_label'] }}
                         </span>
                         <span class="text-[11px] text-gray-400">{{ $item['waktu'] }}</span>
@@ -222,8 +228,8 @@
                 <span id="detailKategori" class="text-xs font-extrabold uppercase tracking-wider text-[#741228]">
                     {{ $firstItem['kategori_upper'] }}
                 </span>
-                <span id="detailStatusBadge" class="inline-flex items-center gap-1.5 text-xs font-semibold {{ $firstItem['status'] === 'menunggu_validasi' ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ($firstItem['status'] === 'disetujui' ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
-                    <span id="detailStatusDot" class="w-1.5 h-1.5 rounded-full {{ $firstItem['status'] === 'menunggu_validasi' ? 'bg-amber-500' : ($firstItem['status'] === 'disetujui' ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                <span id="detailStatusBadge" class="inline-flex items-center gap-1.5 text-xs font-semibold {{ (int)$firstItem['status'] === 1 ? 'text-amber-700 bg-amber-50 border-amber-200/60' : ((int)$firstItem['status'] === 2 ? 'text-emerald-700 bg-emerald-50 border-emerald-200/60' : 'text-rose-700 bg-rose-50 border-rose-200/60') }} px-2.5 py-1 rounded-full border">
+                    <span id="detailStatusDot" class="w-1.5 h-1.5 rounded-full {{ (int)$firstItem['status'] === 1 ? 'bg-amber-500' : ((int)$firstItem['status'] === 2 ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
                     <span id="detailStatus">{{ $firstItem['status_label'] }}</span>
                 </span>
             </div>
@@ -282,9 +288,9 @@
                 @csrf
                 @method('PUT')
                 
-                <!-- Hidden input status: akan diisi 'disetujui' atau 'ditolak' via button -->
-                <input type="hidden" name="status" id="inputStatus" value="disetujui">
-                <input type="hidden" name="redirect_status" value="{{ $status ?? 'menunggu_validasi' }}">
+                <!-- Hidden input status: akan diisi 2 (disetujui) atau 3 (ditolak) via button -->
+                <input type="hidden" name="status" id="inputStatus" value="2">
+                <input type="hidden" name="redirect_status" value="{{ $status ?? 1 }}">
 
                 <!-- Section: Catatan untuk Kontributor -->
                 <div class="mb-6">
@@ -299,7 +305,7 @@
                 <!-- Action Buttons -->
                 <div id="decisionButtons" class="flex items-center justify-end gap-3 pt-2">
                     <!-- Button Minta Revisi (Ditolak) -->
-                    <button type="button" onclick="submitDecision('ditolak')"
+                    <button type="button" onclick="submitDecision(3)"
                             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-[#FFF1F2] text-[#9F1239] hover:bg-[#FFE4E6] border border-[#FECDD3] transition cursor-pointer shadow-2xs">
                         <svg class="w-4 h-4 text-[#9F1239]" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -308,7 +314,7 @@
                     </button>
 
                     <!-- Button Setujui & Terbitkan (Disetujui) -->
-                    <button type="button" onclick="submitDecision('disetujui')"
+                    <button type="button" onclick="submitDecision(2)"
                             class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm bg-[#741228] hover:bg-[#5e0d1f] text-white transition cursor-pointer shadow-sm">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -458,13 +464,13 @@
         const badge = document.getElementById('detailStatusBadge');
         const dot = document.getElementById('detailStatusDot');
         if (badge && dot) {
-            if (item.status === 'menunggu_validasi') {
+            if (Number(item.status) === 1) {
                 badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60";
                 dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
-            } else if (item.status === 'disetujui') {
+            } else if (Number(item.status) === 2) {
                 badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60";
                 dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
-            } else {
+            } else if (Number(item.status) === 3) {
                 badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200/60";
                 dot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
             }
@@ -497,7 +503,7 @@
 
         document.getElementById('inputStatus').value = status;
         
-        if (status === 'ditolak') {
+        if (status === 'ditolak' || status === 3 || status === '3') {
             const catatan = document.getElementById('detailCatatan')?.value.trim();
             if (!catatan) {
                 if (!confirm('Anda belum memberikan catatan revisi untuk kontributor. Apakah Anda yakin ingin meminta revisi tanpa catatan?')) {

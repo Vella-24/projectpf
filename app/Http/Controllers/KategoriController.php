@@ -17,7 +17,7 @@ class KategoriController extends Controller
         }
         // Hanya menghitung pertanyaan yang berstatus disetujui (sudah publish)
         $kategoris = Kategori::withCount(['pertanyaans' => function ($q) {
-            $q->where('status', 'disetujui');
+            $q->where('status', \App\Models\Pertanyaan::DISETUJUI);
         }])->orderBy('nama_kategori')->get();
 
         return view('kategori.index', compact('kategoris'));

@@ -22,16 +22,19 @@ class AdminController extends Controller
         // Hanya: (a) semua yang disetujui, (b) draf milik super admin ini
         $query = Pertanyaan::with(['kategori', 'user', 'tags'])
             ->where(function ($q) use ($userId) {
-                $q->where('status', 'disetujui')
+                $q->where('status', Pertanyaan::DISETUJUI)
                 ->orWhere(function ($q2) use ($userId) {
-                    $q2->where('status', 'draft')
+                    $q2->where('status', Pertanyaan::DRAFT)
                         ->where('user_id', $userId);
                 });
             })
             ->latest();
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $normalizedStatus = Pertanyaan::normalizeStatus($request->status);
+            if ($normalizedStatus !== null) {
+                $query->where('status', $normalizedStatus);
+            }
         }
 
         if ($request->filled('kategori_id')) {
@@ -68,11 +71,17 @@ class AdminController extends Controller
 
     public function pertanyaanStore(Request $request)
     {
+        $statusInput = $request->input('status');
+        $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
+        if ($normalizedStatus !== null && in_array($normalizedStatus, [Pertanyaan::DRAFT, Pertanyaan::DISETUJUI], true)) {
+            $request->merge(['status' => $normalizedStatus]);
+        }
+
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:disetujui,draft',
+            'status' => 'required|integer|in:0,2',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [
@@ -101,7 +110,7 @@ class AdminController extends Controller
         $pertanyaan->tags()->sync(array_unique($idTags));
         $pertanyaan->searchable();
 
-        $pesan = $validated['status'] === 'disetujui'
+        $pesan = (int) $validated['status'] === Pertanyaan::DISETUJUI
             ? 'Pertanyaan baru berhasil dibuat dan langsung dipublikasikan ke halaman mahasiswa!'
             : 'Pertanyaan baru berhasil disimpan sebagai draf.';
 
@@ -121,11 +130,17 @@ class AdminController extends Controller
     {
         $pertanyaan = Pertanyaan::findOrFail($id);
 
+        $statusInput = $request->input('status');
+        $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
+        if ($normalizedStatus !== null) {
+            $request->merge(['status' => $normalizedStatus]);
+        }
+
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:draft,menunggu_validasi,disetujui,ditolak',
+            'status' => 'required|integer|in:0,1,2,3',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ]);

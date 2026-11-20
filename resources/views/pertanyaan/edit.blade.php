@@ -52,25 +52,25 @@
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                     Ubah pengetahuan
                 </h1>
-                @if($pertanyaan->status === 'menunggu_validasi')
+                @if((int)$pertanyaan->status === 1)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                         Menunggu Validasi
                     </span>
-                @elseif($pertanyaan->status === 'disetujui')
+                @elseif((int)$pertanyaan->status === 2)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        Telah Diterbitkan
+                        Disetujui
                     </span>
-                @elseif($pertanyaan->status === 'ditolak')
+                @elseif((int)$pertanyaan->status === 3)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                        Perlu Direvisi
+                        Ditolak / Perlu Revisi
                     </span>
                 @else
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                        Draf
+                        Draft
                     </span>
                 @endif
             </div>
@@ -323,6 +323,8 @@
             alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
             return false;
         }
+        if (statusBaru === 'draft') statusBaru = 0;
+        if (statusBaru === 'menunggu_validasi') statusBaru = 1;
         document.getElementById('input-status').value = statusBaru;
         document.getElementById('form-pengetahuan').submit();
     }
@@ -490,11 +492,11 @@
                 : 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
 
             let statusWarna = 'bg-gray-100 text-gray-700';
-            if (item.status === 'disetujui') {
+            if (Number(item.status) === 2 || item.status === 'disetujui') {
                 statusWarna = 'bg-emerald-100 text-emerald-800';
-            } else if (item.status === 'menunggu_validasi') {
+            } else if (Number(item.status) === 1 || item.status === 'menunggu_validasi') {
                 statusWarna = 'bg-sky-100 text-sky-800';
-            } else if (item.status === 'ditolak') {
+            } else if (Number(item.status) === 3 || item.status === 'ditolak') {
                 statusWarna = 'bg-rose-100 text-rose-700';
             }
 

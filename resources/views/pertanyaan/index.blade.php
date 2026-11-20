@@ -79,11 +79,11 @@
 
         <!-- 2. Menunggu Validasi -->
         @php
-            $isMenungguAktif = request('status') === 'menunggu_validasi';
+            $isMenungguAktif = in_array((string)request('status'), ['1', 'menunggu_validasi'], true);
         @endphp
-        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 'menunggu_validasi'])) }}" 
+        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 1])) }}" 
            data-filter-card
-           data-status="menunggu_validasi"
+           data-status="1"
            data-color="amber"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isMenungguAktif ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -107,11 +107,11 @@
 
         <!-- 3. Telah Diterbitkan (Disetujui) -->
         @php
-            $isDisetujuiAktif = request('status') === 'disetujui';
+            $isDisetujuiAktif = in_array((string)request('status'), ['2', 'disetujui'], true);
         @endphp
-        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 'disetujui'])) }}" 
+        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 2])) }}" 
            data-filter-card
-           data-status="disetujui"
+           data-status="2"
            data-color="emerald"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isDisetujuiAktif ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -134,11 +134,11 @@
 
         <!-- 4. Perlu Direvisi (Ditolak) -->
         @php
-            $isDitolakAktif = request('status') === 'ditolak';
+            $isDitolakAktif = in_array((string)request('status'), ['3', 'ditolak'], true);
         @endphp
-        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 'ditolak'])) }}" 
+        <a href="{{ route('pertanyaan.index', array_merge(request()->except('status', 'page'), ['status' => 3])) }}" 
            data-filter-card
-           data-status="ditolak"
+           data-status="3"
            data-color="rose"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isDitolakAktif ? 'border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -172,8 +172,12 @@
                 <h2 class="text-lg sm:text-xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
                     <span>Kontribusi terbaru</span>
                     @if(request()->filled('status'))
+                        @php
+                            $curStatusInt = \App\Models\Pertanyaan::normalizeStatus(request('status'));
+                            $curStatusLabel = $curStatusInt !== null ? (\App\Models\Pertanyaan::statusLabelMap()[$curStatusInt] ?? 'Semua Status') : ucwords(str_replace('_', ' ', request('status')));
+                        @endphp
                         <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                            Status: {{ ucwords(str_replace('_', ' ', request('status'))) }}
+                            Status: {{ $curStatusLabel }}
                         </span>
                     @endif
                 </h2>
@@ -214,10 +218,10 @@
                 <select name="status" 
                         class="w-full px-3 py-2 bg-white rounded-xl border border-gray-200 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition">
                     <option value="">Semua Status</option>
-                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="menunggu_validasi" {{ request('status') == 'menunggu_validasi' ? 'selected' : '' }}>Menunggu Validasi</option>
-                    <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Diterbitkan</option>
-                    <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Revisi / Ditolak</option>
+                    <option value="0" {{ (string)request('status') === '0' || request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="1" {{ (string)request('status') === '1' || request('status') === 'menunggu_validasi' ? 'selected' : '' }}>Menunggu Validasi</option>
+                    <option value="2" {{ (string)request('status') === '2' || request('status') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
+                    <option value="3" {{ (string)request('status') === '3' || request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak / Perlu Revisi</option>
                 </select>
             </div>
 
@@ -275,20 +279,20 @@
 
                             <!-- Status Badge dengan Titik Warna (Dot) -->
                             <td class="py-4 px-4 whitespace-nowrap">
-                                @if($item->status === 'menunggu_validasi')
+                                @if((int)$item->status === 1)
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        Menunggu
+                                        Menunggu Validasi
                                     </span>
-                                @elseif($item->status === 'disetujui')
+                                @elseif((int)$item->status === 2)
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                        Diterbitkan
+                                        Disetujui
                                     </span>
-                                @elseif($item->status === 'ditolak')
+                                @elseif((int)$item->status === 3)
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/80">
                                         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                        Revisi
+                                        Ditolak / Perlu Revisi
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
@@ -539,12 +543,21 @@
         // Update highlight border & badge aktif kartu
         function updateKartuAktif(statusBaru) {
             const cards = document.querySelectorAll('[data-filter-card]');
+            const norm = s => {
+                if (s === 'menunggu_validasi') return '1';
+                if (s === 'disetujui') return '2';
+                if (s === 'ditolak') return '3';
+                if (s === 'draft') return '0';
+                return s ? String(s) : '';
+            };
+            const normNew = norm(statusBaru);
+
             cards.forEach(card => {
-                const cardStatus = card.getAttribute('data-status');
+                const cardStatus = norm(card.getAttribute('data-status'));
                 const badge = card.querySelector('.badge-aktif');
                 const color = card.getAttribute('data-color');
 
-                if (cardStatus === statusBaru) {
+                if (cardStatus === normNew) {
                     card.classList.add('ring-2', 'shadow-sm');
                     if (color === 'maroon') {
                         card.classList.add('border-[#741228]', 'ring-[#741228]/15', 'bg-rose-50/10');
@@ -567,7 +580,7 @@
             // Sinkronkan pilihan dropdown status di dalam form filter
             const selectStatus = document.querySelector('select[name="status"]');
             if (selectStatus) {
-                selectStatus.value = statusBaru;
+                selectStatus.value = normNew;
             }
         }
 

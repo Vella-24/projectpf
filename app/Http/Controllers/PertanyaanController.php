@@ -29,7 +29,10 @@ class PertanyaanController extends Controller
 
         // Filter berdasarkan status jika dipilih
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $normalizedStatus = Pertanyaan::normalizeStatus($request->status);
+            if ($normalizedStatus !== null) {
+                $query->where('status', $normalizedStatus);
+            }
         }
 
         // Pencarian kata kunci pada judul pertanyaan atau jawaban
@@ -52,9 +55,9 @@ class PertanyaanController extends Controller
         $queryStat = Pertanyaan::where('user_id', $userId);
 
         $totalSemua     = (clone $queryStat)->count();
-        $totalMenunggu  = (clone $queryStat)->where('status', 'menunggu_validasi')->count();
-        $totalDisetujui = (clone $queryStat)->where('status', 'disetujui')->count();
-        $totalDitolak   = (clone $queryStat)->where('status', 'ditolak')->count();
+        $totalMenunggu  = (clone $queryStat)->where('status', 1)->count();
+        $totalDisetujui = (clone $queryStat)->where('status', 2)->count();
+        $totalDitolak   = (clone $queryStat)->where('status', 3)->count();
 
         return view('pertanyaan.index', compact(
             'pertanyaans',
@@ -83,12 +86,19 @@ class PertanyaanController extends Controller
      */
     public function store(Request $request)
     {
+        // Normalisasi status jika dikirim sebagai string (draft / menunggu_validasi)
+        $statusInput = $request->input('status');
+        $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
+        if ($normalizedStatus !== null && in_array($normalizedStatus, [Pertanyaan::DRAFT, Pertanyaan::MENUNGGU_VALIDASI], true)) {
+            $request->merge(['status' => $normalizedStatus]);
+        }
+
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
             'fakultas' => 'nullable|string|in:umum,11,12,13,14,15,16,17,18,19',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:draft,menunggu_validasi',
+            'status' => 'required|integer|in:0,1',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [
@@ -139,7 +149,7 @@ class PertanyaanController extends Controller
             // Meilisearch offline, simpan ke database tetap berhasil
         }
 
-        $pesan = $validated['status'] === 'draft'
+        $pesan = (int) $validated['status'] === Pertanyaan::DRAFT
         ? 'Pertanyaan berhasil disimpan sebagai draft.'
         : 'Pertanyaan berhasil dikirim dan menunggu validasi.';
 
@@ -179,12 +189,19 @@ class PertanyaanController extends Controller
     {
         $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
 
+        // Normalisasi status jika dikirim sebagai string (draft / menunggu_validasi)
+        $statusInput = $request->input('status');
+        $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
+        if ($normalizedStatus !== null && in_array($normalizedStatus, [Pertanyaan::DRAFT, Pertanyaan::MENUNGGU_VALIDASI], true)) {
+            $request->merge(['status' => $normalizedStatus]);
+        }
+
         $validated = $request->validate([
             'kategori_id' => 'required|exists:kategoris,id',
             'fakultas' => 'nullable|string|in:umum,11,12,13,14,15,16,17,18,19',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|in:draft,menunggu_validasi',
+            'status' => 'required|integer|in:0,1',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [
@@ -292,7 +309,7 @@ class PertanyaanController extends Controller
 
         // Hitung jumlah artikel per kategori, disesuaikan dengan personalisasi fakultas
         $kategoris = Kategori::withCount(['pertanyaans' => function ($q) use ($fakultasMahasiswa, $tampilkanSemua) {
-            $q->where('status', 'disetujui');
+            $q->where('status', 2);
             if ($fakultasMahasiswa && !$tampilkanSemua) {
                 // Mode personalisasi: hitung hanya artikel untuk fakultas mahasiswa + umum
                 $q->where(function ($q2) use ($fakultasMahasiswa) {
@@ -308,7 +325,7 @@ class PertanyaanController extends Controller
         $jumlahFakultasLain = 0;
 
         if ($isFiltering) {
-            $query = Pertanyaan::with(['kategori', 'user', 'tags'])->where('status', 'disetujui');
+            $query = Pertanyaan::with(['kategori', 'user', 'tags'])->where('status', 2);
 
             if ($request->filled('kategori_id')) {
                 $query->where('kategori_id', $request->kategori_id);
@@ -422,13 +439,16 @@ class PertanyaanController extends Controller
         $keyword = trim($request->q);
 
         try {
-            $hasil = Pertanyaan::search($keyword)->query(function ($query) {
-                $query->with(['kategori', 'user', 'tags'])->where('status', 'disetujui');
-            })->get();
+            $hasil = Pertanyaan::search($keyword)
+                ->where('status', 2)
+                ->query(function ($query) {
+                    $query->with(['kategori', 'user', 'tags'])
+                        ->where('status', 2);
+                })->get();
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Meilisearch search error: ' . $e->getMessage());
             $hasil = Pertanyaan::with(['kategori', 'user', 'tags'])
-                ->where('status', 'disetujui')
+                ->where('status', 2)
                 ->where(function ($q) use ($keyword) {
                     $q->where('judul_pertanyaan', 'like', "%{$keyword}%")
                     ->orWhere('isi_jawaban', 'like', "%{$keyword}%");
@@ -503,12 +523,12 @@ class PertanyaanController extends Controller
 
             if ($finalScore >= $threshold) {
                 // Tentukan label status yang mudah dipahami
-                $statusLabel = match ($item->status) {
-                    'disetujui' => 'Dipublikasikan',
-                    'menunggu_validasi' => 'Menunggu Validasi',
-                    'draft' => 'Draft',
-                    'ditolak' => 'Perlu Revisi',
-                    default => ucfirst($item->status),
+                $statusLabel = match ((int) $item->status) {
+                    2 => 'Dipublikasikan',
+                    1 => 'Menunggu Validasi',
+                    0 => 'Draft',
+                    3 => 'Perlu Revisi',
+                    default => 'Tidak Diketahui',
                 };
 
                 $matches[] = [
@@ -624,7 +644,7 @@ class PertanyaanController extends Controller
 
         // Ambil semua pertanyaan yang berstatus disetujui
         $pertanyaans = Pertanyaan::with('tags')
-            ->where('status', 'disetujui')
+            ->where('status', 2)
             ->get(['id', 'judul_pertanyaan', 'isi_jawaban', 'fakultas']);
 
         $scored = [];

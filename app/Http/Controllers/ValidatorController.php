@@ -13,7 +13,7 @@ class ValidatorController extends Controller
      */
     public function index(Request $request)
     {
-        $status = $request->get('status', 'menunggu_validasi');
+        $status = $request->get('status', '1');
 
         $query = Pertanyaan::with([
             'kategori',
@@ -22,12 +22,12 @@ class ValidatorController extends Controller
         ])->latest();
 
         if ($status === 'semua') {
-            $query->whereIn('status', ['menunggu_validasi', 'disetujui', 'ditolak']);
-        } elseif (in_array($status, ['menunggu_validasi', 'disetujui', 'ditolak'])) {
-            $query->where('status', $status);
+            $query->whereIn('status', [1, 2, 3]);
+        } elseif (in_array((string) $status, ['1', '2', '3'], true)) {
+            $query->where('status', (int) $status);
         } else {
-            $status = 'menunggu_validasi';
-            $query->where('status', $status);
+            $status = '1';
+            $query->where('status', 1);
         }
 
         if ($request->filled('q')) {
@@ -74,30 +74,36 @@ class ValidatorController extends Controller
             );
         }
 
+        $statusInput = $request->input('status');
+        $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
+        if ($normalizedStatus !== null) {
+            $request->merge(['status' => $normalizedStatus]);
+        }
+
         $validated = $request->validate([
-            'status' => 'required|in:disetujui,ditolak',
+            'status' => 'required|integer|in:2,3',
             'catatan_validator' => 'nullable|string|max:1000',
         ]);
 
         $pertanyaan->update([
-            'status' => $validated['status'],
-            'catatan_validator' => $validated['catatan_validator'],
+            'status' => (int) $validated['status'],
+            'catatan_validator' => $validated['catatan_validator'] ?? null,
         ]);
 
         // Jika FAQ berasal dari pertanyaan lanjutan mahasiswa
-        if ($validated['status'] === 'disetujui') {
+        if ((int) $validated['status'] === Pertanyaan::DISETUJUI) {
             \App\Models\PertanyaanLanjutan::where(
                 'faq_baru_id',
                 $pertanyaan->id
-            )->where('status', 'sedang_ditangani')
+            )->where('status', 1)
             ->update([
-                'status' => 'dijawab'
+                'status' => 2
             ]);
         }
 
-        $statusText = $validated['status'] === 'disetujui' ? 'disetujui' : 'ditolak';
+        $statusText = (int) $validated['status'] === Pertanyaan::DISETUJUI ? 'disetujui' : 'ditolak';
 
-        $redirectStatus = $request->input('redirect_status', 'menunggu_validasi');
+        $redirectStatus = $request->input('redirect_status', '1');
         return redirect()->route('validator.index', ['status' => $redirectStatus])->with('sukses', "Pertanyaan berhasil {$statusText}!");
     }
 
@@ -115,7 +121,7 @@ class ValidatorController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($pertanyaan->status !== 'menunggu_validasi') {
+            if ($pertanyaan->status !== Pertanyaan::MENUNGGU_VALIDASI) {
                 return 'selesai';
             }
 
@@ -149,7 +155,7 @@ class ValidatorController extends Controller
 
         return redirect()
             ->route('validator.index', [
-                'status' => 'menunggu_validasi',
+                'status' => '1',
                 'page' => max(1, (int) $request->input('page', 1)),
                 'selected' => $id,
             ])

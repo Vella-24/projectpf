@@ -7,10 +7,15 @@ use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
 use App\Models\Tag;
 
-
 class Pertanyaan extends Model
 {
     use HasFactory, Searchable;
+
+    // Status Integer Constants
+    public const DRAFT = 0;
+    public const MENUNGGU_VALIDASI = 1;
+    public const DISETUJUI = 2;
+    public const DITOLAK = 3;
 
     protected $fillable = [
         'kategori_id',
@@ -23,6 +28,65 @@ class Pertanyaan extends Model
         'validator_id',
         'review_diambil_pada',
     ];
+
+    // Status dibaca sebagai integer di database
+    protected $casts = [
+        'status' => 'integer',
+    ];
+
+    /**
+     * Pemetaan status angka ke teks tampilan
+     */
+    public static function statusLabelMap(): array
+    {
+        return [
+            self::DRAFT => 'Draft',
+            self::MENUNGGU_VALIDASI => 'Menunggu Validasi',
+            self::DISETUJUI => 'Disetujui',
+            self::DITOLAK => 'Ditolak / Perlu Revisi',
+        ];
+    }
+
+    /**
+     * Konversi nilai status (string / angka) ke integer yang valid
+     */
+    public static function normalizeStatus(mixed $status): ?int
+    {
+        if ($status === null || $status === '') {
+            return null;
+        }
+
+        if (is_numeric($status)) {
+            return (int) $status;
+        }
+
+        return match (strtolower(trim((string) $status))) {
+            'draft' => self::DRAFT,
+            'menunggu_validasi', 'menunggu' => self::MENUNGGU_VALIDASI,
+            'disetujui' => self::DISETUJUI,
+            'ditolak', 'revisi' => self::DITOLAK,
+            default => null,
+        };
+    }
+
+    /**
+     * Mendapatkan label string dari status untuk tampilan
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return match ((int) $this->status) {
+            self::DRAFT => 'Draft',
+            self::MENUNGGU_VALIDASI => 'Menunggu Validasi',
+            self::DISETUJUI => 'Disetujui',
+            self::DITOLAK => 'Ditolak / Perlu Revisi',
+            default => 'Draft',
+        };
+    }
+
+    public function getStatusTextAttribute(): string
+    {
+        return $this->status_label;
+    }
 
     /**
      * Mendapatkan nama fakultas target
@@ -56,7 +120,7 @@ class Pertanyaan extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    //relasi tag
+    // Relasi tag
     public function tags()
     {
         return $this->belongsToMany(
@@ -92,13 +156,13 @@ class Pertanyaan extends Model
             'kategori_nama' => (string) ($this->kategori->nama_kategori ?? ''),
             'fakultas' => (string) ($this->fakultas ?? 'umum'),
             'tags' => $this->tags ? $this->tags->pluck('nama_tag')->implode(' ') : '',
-            'status' => (string) $this->status,
+            'status' => (int) $this->status,
         ];
     }
 
     public function shouldBeSearchable(): bool
     {
-        return $this->status === 'disetujui';
+        return (int) $this->status === self::DISETUJUI;
     }
 
     public function sumberPertanyaanLanjutan()

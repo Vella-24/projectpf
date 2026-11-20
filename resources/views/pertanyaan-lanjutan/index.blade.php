@@ -67,13 +67,13 @@
             </div>
         </a>
 
-        <!-- 2. BELUM DITANGANI (STATUS: BARU) -->
+        <!-- 2. BELUM DITANGANI (STATUS: 0) -->
         @php
-            $isBaruAktif = request('status') === 'baru';
+            $isBaruAktif = (string)request('status') === '0' || request('status') === 'baru';
         @endphp
-        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 'baru'])) }}" 
+        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 0])) }}" 
            data-filter-card
-           data-status="baru"
+           data-status="0"
            data-color="amber"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isBaruAktif ? 'border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -95,13 +95,13 @@
             </div>
         </a>
 
-        <!-- 3. SEDANG DITANGANI (STATUS: SEDANG_DITANGANI) -->
+        <!-- 3. SEDANG DITANGANI (STATUS: 1) -->
         @php
-            $isDiprosesAktif = request('status') === 'sedang_ditangani';
+            $isDiprosesAktif = (string)request('status') === '1' || request('status') === 'sedang_ditangani';
         @endphp
-        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 'sedang_ditangani'])) }}" 
+        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 1])) }}" 
            data-filter-card
-           data-status="sedang_ditangani"
+           data-status="1"
            data-color="blue"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isDiprosesAktif ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -122,13 +122,13 @@
             </div>
         </a>
 
-        <!-- 4. SUDAH DIJAWAB (STATUS: DIJAWAB) -->
+        <!-- 4. SUDAH DIJAWAB (STATUS: 2) -->
         @php
-            $isDijawabAktif = request('status') === 'dijawab';
+            $isDijawabAktif = (string)request('status') === '2' || request('status') === 'dijawab';
         @endphp
-        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 'dijawab'])) }}" 
+        <a href="{{ route('pertanyaanLanjutan.index', array_merge(request()->except('status', 'page'), ['status' => 2])) }}" 
            data-filter-card
-           data-status="dijawab"
+           data-status="2"
            data-color="emerald"
            class="bg-white rounded-3xl p-4 sm:p-5 border transition-all duration-200 flex flex-col justify-between group hover:shadow-md cursor-pointer {{ $isDijawabAktif ? 'border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/20 shadow-sm' : 'border-gray-100 hover:border-gray-200' }}">
             <div class="flex items-center justify-between mb-3">
@@ -163,8 +163,12 @@
                 <h3 class="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
                     <span>Daftar Pertanyaan Masuk</span>
                     @if(request()->filled('status'))
+                        @php
+                            $normStat = \App\Models\PertanyaanLanjutan::normalizeStatus(request('status'));
+                            $statusTeks = $normStat !== null ? (\App\Models\PertanyaanLanjutan::statusLabelMap()[$normStat] ?? 'Semua') : 'Semua';
+                        @endphp
                         <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                            Status: {{ request('status') === 'baru' ? 'Belum Ditangani' : (request('status') === 'sedang_ditangani' ? 'Sedang Ditangani' : (request('status') === 'dijawab' ? 'Sudah Dijawab' : ucwords(str_replace('_', ' ', request('status'))))) }}
+                            Status: {{ $statusTeks }}
                         </span>
                     @endif
                 </h3>
@@ -201,19 +205,19 @@
                             <!-- STATUS DAN TANGGAL -->
                             <div class="flex flex-wrap items-center gap-2 mb-3">
 
-                                @if ($item->status === 'baru')
+                                @if ((int)$item->status === \App\Models\PertanyaanLanjutan::BARU)
                                     <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-bold px-3 py-1 rounded-full">
                                         <span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
                                         Belum Ditangani
                                     </span>
 
-                                @elseif ($item->status === 'sedang_ditangani')
+                                @elseif ((int)$item->status === \App\Models\PertanyaanLanjutan::SEDANG_DITANGANI)
                                     <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
                                         <span class="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
                                         Sedang Ditangani
                                     </span>
 
-                                @elseif ($item->status === 'dijawab')
+                                @elseif ((int)$item->status === \App\Models\PertanyaanLanjutan::DIJAWAB)
                                     <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">
                                         <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
                                         Sudah Dijawab
@@ -285,7 +289,7 @@
                         <!-- AKSI -->
                         <div class="shrink-0">
 
-                            @if ($item->status === 'baru')
+                            @if ((int)$item->status === \App\Models\PertanyaanLanjutan::BARU)
 
                                 <form action="{{ route('pertanyaanLanjutan.ambil', $item->id) }}"
                                       method="POST">
@@ -299,12 +303,12 @@
 
                                 </form>
 
-                            @elseif ($item->status === 'sedang_ditangani'
+                            @elseif ((int)$item->status === \App\Models\PertanyaanLanjutan::SEDANG_DITANGANI
                                 && $item->data_entry_id == session('user.id'))
 
                                 @if (
                                         $item->faqBaru &&
-                                        $item->faqBaru->status === 'menunggu_validasi'
+                                        (int)$item->faqBaru->status === \App\Models\Pertanyaan::MENUNGGU_VALIDASI
                                     )
                                         <span class="inline-flex items-center px-4 py-2.5 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold">
                                             Menunggu Validasi
@@ -317,14 +321,14 @@
                                         </a>
                                     @endif
 
-                            @elseif ($item->status === 'sedang_ditangani')
+                            @elseif ((int)$item->status === \App\Models\PertanyaanLanjutan::SEDANG_DITANGANI)
 
                                 <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-500 rounded-xl text-xs font-semibold">
                                     <i class="fas fa-lock"></i>
                                     <span>Sudah Diambil</span>
                                 </span>
 
-                            @elseif ($item->status === 'dijawab')
+                            @elseif ((int)$item->status === \App\Models\PertanyaanLanjutan::DIJAWAB)
 
                                 <span class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 rounded-xl text-xs font-semibold">
                                     <i class="fas fa-check"></i>
@@ -357,7 +361,11 @@
 
                     <h4 class="text-sm font-bold text-gray-700">
                         @if(request()->filled('status'))
-                            Tidak ada pertanyaan dengan status "{{ request('status') === 'baru' ? 'Belum Ditangani' : (request('status') === 'sedang_ditangani' ? 'Sedang Ditangani' : (request('status') === 'dijawab' ? 'Sudah Dijawab' : ucwords(str_replace('_', ' ', request('status'))))) }}"
+                            @php
+                                $normStat = \App\Models\PertanyaanLanjutan::normalizeStatus(request('status'));
+                                $statusTeks = $normStat !== null ? (\App\Models\PertanyaanLanjutan::statusLabelMap()[$normStat] ?? '') : '';
+                            @endphp
+                            Tidak ada pertanyaan dengan status "{{ $statusTeks }}"
                         @else
                             Belum Ada Pertanyaan Mahasiswa
                         @endif
@@ -537,13 +545,19 @@
 
         // Update highlight border & badge aktif kartu
         function updateKartuAktif(statusBaru) {
+            let normalized = statusBaru !== null && statusBaru !== undefined ? String(statusBaru) : '';
+            if (normalized === 'baru') normalized = '0';
+            else if (normalized === 'sedang_ditangani') normalized = '1';
+            else if (normalized === 'dijawab') normalized = '2';
+            else if (normalized === 'ditutup') normalized = '3';
+
             const cards = document.querySelectorAll('[data-filter-card]');
             cards.forEach(card => {
-                const cardStatus = card.getAttribute('data-status');
+                const cardStatus = card.getAttribute('data-status') || '';
                 const badge = card.querySelector('.badge-aktif');
                 const color = card.getAttribute('data-color');
 
-                if (cardStatus === statusBaru) {
+                if (cardStatus === normalized) {
                     card.classList.add('ring-2', 'shadow-sm');
                     if (color === 'maroon') {
                         card.classList.add('border-[#741228]', 'ring-[#741228]/15', 'bg-rose-50/10');

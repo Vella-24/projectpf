@@ -10,8 +10,8 @@
     <form id="form-pengetahuan" action="{{ route('pertanyaan.store') }}" method="POST">
         @csrf
 
-        <!-- Input Tersembunyi untuk Status (Default: menunggu_validasi, bisa diubah oleh tombol Simpan Draf) -->
-        <input type="hidden" name="status" id="input-status" value="{{ old('status', 'menunggu_validasi') }}">
+        <!-- Input Tersembunyi untuk Status (Default: 1 / Menunggu Validasi, bisa diubah oleh tombol Simpan Draf) -->
+        <input type="hidden" name="status" id="input-status" value="{{ old('status', 1) }}">
 
         <!-- Sub-Bar Navigasi & Aksi Tombol (Gambar 4) -->
         <div class="flex items-center justify-between pb-2">
@@ -284,6 +284,8 @@
             alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
             return false;
         }
+        if (statusBaru === 'draft') statusBaru = 0;
+        if (statusBaru === 'menunggu_validasi') statusBaru = 1;
         document.getElementById('input-status').value = statusBaru;
         document.getElementById('form-pengetahuan').submit();
     }
@@ -456,11 +458,11 @@
                 : 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
 
             let statusWarna = 'bg-gray-100 text-gray-700';
-            if (item.status === 'disetujui') {
+            if (Number(item.status) === 2 || item.status === 'disetujui') {
                 statusWarna = 'bg-emerald-100 text-emerald-800';
-            } else if (item.status === 'menunggu_validasi') {
+            } else if (Number(item.status) === 1 || item.status === 'menunggu_validasi') {
                 statusWarna = 'bg-sky-100 text-sky-800';
-            } else if (item.status === 'ditolak') {
+            } else if (Number(item.status) === 3 || item.status === 'ditolak') {
                 statusWarna = 'bg-rose-100 text-rose-700';
             }
 
