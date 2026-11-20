@@ -111,14 +111,6 @@ class PertanyaanController extends Controller
 
         $validated['fakultas'] = $validated['fakultas'] ?? 'umum';
 
-        // Cek kemiripan pertanyaan di server-side (mencegah bypass)
-        $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan']);
-        if ($kemiripan) {
-            return back()->withInput()->withErrors([
-                'judul_pertanyaan' => "Pertanyaan tidak dapat disimpan karena terdeteksi serupa ({$kemiripan['kemiripan']}%) dengan pertanyaan yang sudah ada: \"{$kemiripan['judul_pertanyaan']}\". Silakan ubah teks pertanyaan agar tidak duplikat."
-            ]);
-        }
-
         $daftarTag = $validated['tags'] ?? []; //ambil daftar kata kunci
         unset($validated['tags']);
 
@@ -213,14 +205,6 @@ class PertanyaanController extends Controller
         ]);
 
         $validated['fakultas'] = $validated['fakultas'] ?? 'umum';
-
-        // Cek kemiripan pertanyaan di server-side (mencegah bypass), kecualikan pertanyaan saat ini
-        $kemiripan = $this->temukanPertanyaanMirip($validated['judul_pertanyaan'], $pertanyaan->id);
-        if ($kemiripan) {
-            return back()->withInput()->withErrors([
-                'judul_pertanyaan' => "Pertanyaan tidak dapat disimpan karena terdeteksi serupa ({$kemiripan['kemiripan']}%) dengan pertanyaan yang sudah ada: \"{$kemiripan['judul_pertanyaan']}\". Silakan ubah teks pertanyaan agar tidak duplikat."
-            ]);
-        }
 
         $daftarTag = $validated['tags'] ?? [];
         unset($validated['tags']);

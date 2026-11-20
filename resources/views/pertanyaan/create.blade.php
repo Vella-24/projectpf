@@ -114,10 +114,10 @@
                                 </span>
                                 <div class="space-y-1">
                                     <p class="font-extrabold text-rose-900 text-sm" id="kemiripan-title">
-                                        ⛔ Pertanyaan Tidak Dapat Dilanjutkan!
+                                        ⚠️ Pertanyaan Serupa Terdeteksi!
                                     </p>
                                     <p class="text-xs text-rose-800 leading-relaxed font-medium" id="kemiripan-desc">
-                                        Sistem mendeteksi pertanyaan ini serupa dengan data yang sudah ada di database. Demi mencegah duplikasi, <strong>tombol simpan dinonaktifkan</strong> sampai Anda mengubah rumusan pertanyaan.
+                                        Sistem mendeteksi pertanyaan ini memiliki kemiripan dengan data yang sudah ada di database. Anda tetap dapat menyimpan draft atau mengirimkannya untuk divalidasi.
                                     </p>
                                 </div>
                             </div>
@@ -128,7 +128,7 @@
                             </div>
 
                             <div class="mt-3 pt-2.5 border-t border-rose-200 text-[11px] text-rose-700 font-medium">
-                                💡 <em>Silakan gunakan pertanyaan yang sudah ada, atau ubah teks pertanyaan Anda di atas agar tidak serupa.</em>
+                                💡 <em>Silakan periksa pertanyaan serupa di atas sebelum melanjutkan, atau sesuaikan rumusan pertanyaan Anda jika diperlukan.</em>
                             </div>
                         </div>
                     </div>
@@ -280,10 +280,6 @@
 <script>
     // Penanganan tombol Simpan Draft vs Kirim untuk Validasi
     function submitDenganStatus(statusBaru) {
-        if (typeof adaKemiripanTerdeteksi !== 'undefined' && adaKemiripanTerdeteksi) {
-            alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
-            return false;
-        }
         if (statusBaru === 'draft') statusBaru = 0;
         if (statusBaru === 'menunggu_validasi') statusBaru = 1;
         document.getElementById('input-status').value = statusBaru;
@@ -371,33 +367,6 @@
     let timerDebounce = null;
     let adaKemiripanTerdeteksi = false;
 
-    // Kunci atau buka tombol submit jika kemiripan terdeteksi
-    function setSubmitButtonsState(isBlocked) {
-        adaKemiripanTerdeteksi = isBlocked;
-        const buttons = document.querySelectorAll('.btn-submit-action');
-        buttons.forEach(function(btn) {
-            if (isBlocked) {
-                btn.disabled = true;
-                btn.setAttribute('title', 'Tidak dapat menyimpan: Pertanyaan serupa terdeteksi.');
-                btn.classList.add('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-            } else {
-                btn.disabled = false;
-                btn.removeAttribute('title');
-                btn.classList.remove('opacity-40', 'cursor-not-allowed', 'pointer-events-none');
-            }
-        });
-    }
-
-    if (formPengetahuan) {
-        formPengetahuan.addEventListener('submit', function(e) {
-            if (adaKemiripanTerdeteksi) {
-                e.preventDefault();
-                alert('Pertanyaan tidak dapat disimpan karena terdeteksi serupa dengan pertanyaan yang sudah ada di database. Silakan ubah rumusan pertanyaan Anda.');
-                return false;
-            }
-        });
-    }
-
     inputJudul.addEventListener('input', function() {
         const query = this.value.trim();
 
@@ -407,7 +376,7 @@
         if (query.length < 5) {
             kemiripanWrapper.classList.add('hidden');
             daftarMirip.innerHTML = '';
-            setSubmitButtonsState(false);
+            adaKemiripanTerdeteksi = false;
             return;
         }
 
@@ -437,12 +406,13 @@
             const data = await response.json();
 
             if (data.matches && data.matches.length > 0) {
+                adaKemiripanTerdeteksi = true;
                 renderPeringatanKemiripan(data.matches);
-                setSubmitButtonsState(true); // BLOKIR tombol submit
+                // Peringatan tetap ditampilkan, tombol tetap bisa ditekan
             } else {
+                adaKemiripanTerdeteksi = false;
                 kemiripanWrapper.classList.add('hidden');
                 daftarMirip.innerHTML = '';
-                setSubmitButtonsState(false); // BUKA KEMBALI tombol submit
             }
         } catch (error) {
             console.error('Gagal memeriksa kemiripan pertanyaan:', error);

@@ -67,6 +67,9 @@ Route::prefix('validator')->middleware(CheckRole::class . ':validator')->group(f
 
 // Super Admin Routes
 Route::prefix('superadmin')->middleware(CheckRole::class . ':super_admin')->group(function () {
+    // Cek kemiripan pertanyaan (Fuzzy Matching Levenshtein Distance)
+    Route::post('/pertanyaan/cek-kemiripan', [AdminController::class, 'cekKemiripan'])->name('superadmin.pertanyaan.cekKemiripan');
+
     // Kelola Pertanyaan (Superadmin CRUD - pertanyaan disetujui / dipublikasikan)
     Route::get('/pertanyaan', [AdminController::class, 'pertanyaanIndex'])->name('superadmin.pertanyaan.index');
     Route::get('/pertanyaan/create', [AdminController::class, 'pertanyaanCreate'])->name('superadmin.pertanyaan.create');
