@@ -172,4 +172,16 @@ class Pertanyaan extends Model
             'faq_baru_id'
         );
     }
+
+    public function riwayatJawaban()
+    {
+        return $this->hasMany(RiwayatJawaban::class, 'pertanyaan_id')
+            ->orderBy('created_at', 'desc');
+    }
+
+    public function riwayatTerbaru()
+    {
+        return $this->hasOne(RiwayatJawaban::class, 'pertanyaan_id')
+            ->latestOfMany();
+    }
 }

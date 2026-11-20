@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pertanyaan;
 use App\Models\PertanyaanLanjutan;
 use App\Models\Tag;
+use App\Models\RiwayatJawaban;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -252,6 +253,8 @@ class PertanyaanLanjutanController extends Controller
                     abort(403);
                 }
 
+                $jawabanLama = $faqBaru->isi_jawaban;
+
                 // Perbarui jawaban yang sudah pernah disimpan
                 $faqBaru->update([
                     'kategori_id' => $faqAsal->kategori_id,
@@ -260,6 +263,15 @@ class PertanyaanLanjutanController extends Controller
                     'status' => $statusBaru,
                     'catatan_validator' => null,
                 ]);
+
+                if ($jawabanLama !== $validated['isi_jawaban']) {
+                    RiwayatJawaban::create([
+                        'pertanyaan_id' => $faqBaru->id,
+                        'jawaban_lama' => $jawabanLama,
+                        'jawaban_baru' => $validated['isi_jawaban'],
+                        'user_id' => $userId,
+                    ]);
+                }
 
             } else {
 

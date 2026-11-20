@@ -176,6 +176,11 @@
                         </td>
                         <td class="py-4 px-6 text-center">
                             <div class="flex items-center justify-center gap-1.5">
+                                <a href="{{ route('pertanyaan.show', $item->id) }}" 
+                                   class="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition" 
+                                   title="Lihat Detail & Riwayat Edit">
+                                    Detail
+                                </a>
                                 <a href="{{ route('superadmin.pertanyaan.edit', $item->id) }}" 
                                    class="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition" 
                                    title="Ubah Pertanyaan">

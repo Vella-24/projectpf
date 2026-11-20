@@ -12,6 +12,7 @@ class Kategori extends Model
     protected $fillable = [
         'nama_kategori',
         'deskripsi',
+        'user_id',
     ];
 
     /**
@@ -20,5 +21,10 @@ class Kategori extends Model
     public function pertanyaans()
     {
         return $this->hasMany(Pertanyaan::class, 'kategori_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

@@ -20,12 +20,21 @@
 
         $isUmum = !$p->fakultas || $p->fakultas === 'umum';
 
+        $riwayatTerbaru = $p->riwayatJawaban->first();
+        $jawabanLama = $riwayatTerbaru ? $riwayatTerbaru->jawaban_lama : null;
+        $hasRevisi = !empty($jawabanLama);
+
         return [
             'id' => $p->id,
             'kategori' => $categoryName,
             'kategori_upper' => strtoupper($categoryName),
             'judul' => $p->judul_pertanyaan,
             'jawaban' => $p->isi_jawaban,
+            'jawaban_lama' => $jawabanLama,
+            'has_revisi' => $hasRevisi,
+            'revisi_user' => $riwayatTerbaru && $riwayatTerbaru->user ? $riwayatTerbaru->user->name : null,
+            'revisi_waktu' => $riwayatTerbaru && $riwayatTerbaru->created_at ? $riwayatTerbaru->created_at->isoFormat('D MMMM Y, HH:mm') : null,
+            'total_revisi' => $p->riwayatJawaban ? $p->riwayatJawaban->count() : 0,
             'status' => $p->status,
             'validator_id' => $p->validator_id,
             'validator_name' => $p->validator->name ?? null,
@@ -135,10 +144,18 @@
                     
                     <!-- Top Meta: Status pill & Time -->
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ (int)$item['status'] === 1 ? 'text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md' : ((int)$item['status'] === 2 ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md' : 'text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md') }}">
-                            <span class="w-1.5 h-1.5 rounded-full {{ (int)$item['status'] === 1 ? 'bg-amber-500' : ((int)$item['status'] === 2 ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
-                            {{ $item['status_label'] }}
-                        </span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="inline-flex items-center gap-1.5 text-xs font-semibold {{ (int)$item['status'] === 1 ? 'text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md' : ((int)$item['status'] === 2 ? 'text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md' : 'text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md') }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ (int)$item['status'] === 1 ? 'bg-amber-500' : ((int)$item['status'] === 2 ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
+                                {{ $item['status_label'] }}
+                            </span>
+                            @if($item['has_revisi'])
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Revisi
+                                </span>
+                            @endif
+                        </div>
                         <span class="text-[11px] text-gray-400">{{ $item['waktu'] }}</span>
                     </div>
 
@@ -267,21 +284,55 @@
             </div>
 
             <!-- Informasi siapa yang mengambil review -->
-            <div id="detailValidatorInfo" class="mb-5 text-sm"></div>
+            <div id="detailValidatorInfo" class="mb-5 text-sm font-semibold"></div>
 
-            <!-- Section: Jawaban Yang Diajukan -->
-            <div class="mb-6">
-                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                    JAWABAN YANG DIAJUKAN
-                </h4>
-                <div id="detailJawaban" class="text-sm leading-relaxed text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 whitespace-pre-line">
-                    {{ $firstItem['jawaban'] }}
+            <!-- Section: Jawaban & Perbandingan Revisi -->
+            <div class="mb-6 space-y-4">
+                <!-- Info Banner Jika Ada Revisi -->
+                <div id="detailRevisiBanner" class="{{ ($firstItem['has_revisi'] ?? false) ? '' : 'hidden' }} p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs flex items-start gap-2.5 text-amber-900">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <span class="font-bold">Pertanyaan ini memiliki revisi:</span>
+                        <span id="detailRevisiMeta" class="text-amber-800 ml-1">
+                            @if(!empty($firstItem['revisi_user']))
+                                Diedit oleh <strong>{{ $firstItem['revisi_user'] }}</strong> ({{ $firstItem['revisi_waktu'] }})
+                            @endif
+                        </span>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Keterangan status kepemilikan review -->
-            <div id="detailValidatorInfo"
-                class="mb-5 text-sm font-semibold text-amber-600">
+                <!-- Box Jawaban Sebelumnya (Tampil jika ada revisi) -->
+                <div id="detailRevisiBox" class="{{ ($firstItem['has_revisi'] ?? false) ? '' : 'hidden' }}">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                            JAWABAN SEBELUMNYA (VERSI LAMA)
+                        </h4>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                            Sebelum Revisi
+                        </span>
+                    </div>
+                    <div id="detailJawabanLama" class="text-sm leading-relaxed text-gray-600 bg-rose-50/20 p-4 rounded-xl border border-rose-200/70 whitespace-pre-line">
+                        {{ $firstItem['jawaban_lama'] ?? '' }}
+                    </div>
+                </div>
+
+                <!-- Box Jawaban Baru / Yang Diajukan -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 id="detailJudulJawaban" class="text-xs font-bold {{ ($firstItem['has_revisi'] ?? false) ? 'text-emerald-700' : 'text-gray-400' }} uppercase tracking-wider flex items-center gap-1.5">
+                            <span id="detailJudulJawabanText">{{ ($firstItem['has_revisi'] ?? false) ? 'JAWABAN BARU (HASIL REVISI)' : 'JAWABAN YANG DIAJUKAN' }}</span>
+                        </h4>
+                        <span id="detailBadgeJawabanBaru" class="{{ ($firstItem['has_revisi'] ?? false) ? '' : 'hidden' }} text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Versi Terbaru
+                        </span>
+                    </div>
+                    <div id="detailJawaban" class="text-sm leading-relaxed text-gray-800 {{ ($firstItem['has_revisi'] ?? false) ? 'bg-emerald-50/20 border-emerald-200/70' : 'bg-gray-50/50 border-gray-100' }} p-4 rounded-xl border whitespace-pre-line">
+                        {{ $firstItem['jawaban'] }}
+                    </div>
+                </div>
             </div>
             <!-- Form Keputusan Validator (Menggunakan Route updateStatus yang ada) -->
             <form id="formReview" action="{{ $firstItem['update_url'] }}" method="POST" class="hidden">
@@ -406,6 +457,33 @@
 
         const elCatatan = document.getElementById('detailCatatan');
         if (elCatatan) elCatatan.value = item.catatan || '';
+
+        // Update perbandingan revisi
+        const revisiBanner = document.getElementById('detailRevisiBanner');
+        const revisiMeta = document.getElementById('detailRevisiMeta');
+        const revisiBox = document.getElementById('detailRevisiBox');
+        const elJawabanLama = document.getElementById('detailJawabanLama');
+        const elJudulJawaban = document.getElementById('detailJudulJawaban');
+        const elJudulJawabanText = document.getElementById('detailJudulJawabanText');
+        const elBadgeJawabanBaru = document.getElementById('detailBadgeJawabanBaru');
+
+        if (item.has_revisi && item.jawaban_lama) {
+            if (revisiBanner) revisiBanner.classList.remove('hidden');
+            if (revisiMeta) revisiMeta.innerHTML = `Diedit oleh <strong>${item.revisi_user || 'Kontributor'}</strong> (${item.revisi_waktu || '-'})`;
+            if (revisiBox) revisiBox.classList.remove('hidden');
+            if (elJawabanLama) elJawabanLama.textContent = item.jawaban_lama;
+            if (elJudulJawaban) elJudulJawaban.className = "text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5";
+            if (elJudulJawabanText) elJudulJawabanText.textContent = "JAWABAN BARU (HASIL REVISI)";
+            if (elBadgeJawabanBaru) elBadgeJawabanBaru.classList.remove('hidden');
+            if (elJawaban) elJawaban.className = "text-sm leading-relaxed text-gray-800 bg-emerald-50/20 border-emerald-200/70 p-4 rounded-xl border whitespace-pre-line";
+        } else {
+            if (revisiBanner) revisiBanner.classList.add('hidden');
+            if (revisiBox) revisiBox.classList.add('hidden');
+            if (elJudulJawaban) elJudulJawaban.className = "text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5";
+            if (elJudulJawabanText) elJudulJawabanText.textContent = "JAWABAN YANG DIAJUKAN";
+            if (elBadgeJawabanBaru) elBadgeJawabanBaru.classList.add('hidden');
+            if (elJawaban) elJawaban.className = "text-sm leading-relaxed text-gray-700 bg-gray-50/50 border-gray-100 p-4 rounded-xl border whitespace-pre-line";
+        }
 
         const formReview = document.getElementById('formReview');
         const validatorInfo = document.getElementById('detailValidatorInfo');

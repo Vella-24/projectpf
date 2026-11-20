@@ -50,6 +50,8 @@ class KategoriController extends Controller
             'nama_kategori.unique' => 'Nama kategori sudah terdaftar.',
         ]);
 
+        $validated['user_id'] = session('user.id');
+
         Kategori::create($validated);
 
         return redirect()->route('kategori.index')->with('sukses', 'Kategori baru berhasil ditambahkan!');

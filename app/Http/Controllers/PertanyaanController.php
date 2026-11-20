@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kategori;
 use App\Models\Pertanyaan;
 use App\Models\Tag;
+use App\Models\RiwayatJawaban;
 use Illuminate\Http\Request;
 
 class PertanyaanController extends Controller
@@ -153,9 +154,13 @@ class PertanyaanController extends Controller
      */
     public function show($id)
     {
-        $pertanyaan = Pertanyaan::with(['kategori', 'user'])
-            ->where('user_id', session('user.id'))
-            ->findOrFail($id);
+        $query = Pertanyaan::with(['kategori', 'user', 'tags', 'riwayatJawaban.user']);
+
+        if (session('user.role') === 'data_entry') {
+            $query->where('user_id', session('user.id'));
+        }
+
+        $pertanyaan = $query->findOrFail($id);
 
         return view('pertanyaan.show', compact('pertanyaan'));
     }
@@ -170,6 +175,10 @@ class PertanyaanController extends Controller
         $tags = Tag::orderBy('nama_tag')->get();
         $daftarFakultas = \App\Helpers\FakultasHelper::getAll();
         $pertanyaan->load('tags');
+        if ($pertanyaan->status === 2) {
+        return redirect()->route('pertanyaan.index')
+            ->with('error', 'Pertanyaan yang sudah dipublish tidak dapat diedit lagi.');
+    }
 
         return view('pertanyaan.edit', compact('pertanyaan', 'kategoris', 'tags', 'daftarFakultas'));
     }
@@ -181,10 +190,12 @@ class PertanyaanController extends Controller
     {
         $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
 
+        $jawabanLama = $pertanyaan->isi_jawaban;
+
         // Normalisasi status jika dikirim sebagai string (draft / menunggu_validasi)
         $statusInput = $request->input('status');
         $normalizedStatus = Pertanyaan::normalizeStatus($statusInput);
-        if ($normalizedStatus !== null && in_array($normalizedStatus, [Pertanyaan::DRAFT, Pertanyaan::MENUNGGU_VALIDASI], true)) {
+        if ($normalizedStatus !== null) {
             $request->merge(['status' => $normalizedStatus]);
         }
 
@@ -193,7 +204,7 @@ class PertanyaanController extends Controller
             'fakultas' => 'nullable|string|in:umum,11,12,13,14,15,16,17,18,19',
             'judul_pertanyaan' => 'required|string|max:1000',
             'isi_jawaban' => 'required|string',
-            'status' => 'required|integer|in:0,1',
+            'status' => 'required|integer|in:0,1,2,3',
             'tags' => 'nullable|array',
             'tags.*' => 'string|max:100',
         ], [
@@ -212,6 +223,15 @@ class PertanyaanController extends Controller
         $tagLama = $pertanyaan->tags()->pluck('tags.id')->toArray();
 
         $pertanyaan->update($validated);
+
+        if ($jawabanLama !== $validated['isi_jawaban']) {
+            RiwayatJawaban::create([
+                'pertanyaan_id' => $pertanyaan->id,
+                'jawaban_lama' => $jawabanLama,
+                'jawaban_baru' => $validated['isi_jawaban'],
+                'user_id' => session('user.id') ?? auth()->id(),
+            ]);
+        }
        
         $idTags = [];
 
@@ -249,6 +269,11 @@ class PertanyaanController extends Controller
             if ($tag && $tag->pertanyaans()->count() === 0) {
                 $tag->delete();
             }
+        }
+
+        if ($pertanyaan->status === 2) {
+            return redirect()->route('pertanyaan.index')
+                ->with('error', 'Pertanyaan yang sudah dipublish tidak dapat diedit lagi.');
         }
 
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');

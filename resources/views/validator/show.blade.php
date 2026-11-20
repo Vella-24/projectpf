@@ -93,14 +93,87 @@
                 </div>
             </div>
 
-            <!-- Jawaban Yang Diajukan -->
-            <div class="mb-6">
-                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                    JAWABAN YANG DIAJUKAN
-                </h4>
-                <div class="text-sm leading-relaxed text-gray-700 bg-gray-50/50 p-4 rounded-xl border border-gray-100 whitespace-pre-line">
-                    {{ $pertanyaan->isi_jawaban }}
+            @php
+                $riwayatTerbaru = $pertanyaan->riwayatJawaban->first();
+                $hasRevisi = $riwayatTerbaru && !empty($riwayatTerbaru->jawaban_lama);
+            @endphp
+
+            <!-- Section: Jawaban & Perbandingan Revisi -->
+            <div class="mb-6 space-y-4">
+                @if($hasRevisi)
+                    <!-- Info Banner Jika Ada Revisi -->
+                    <div class="p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl text-xs flex items-start gap-2.5 text-amber-900">
+                        <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <span class="font-bold">Pertanyaan ini telah direvisi:</span>
+                            <span class="text-amber-800 ml-1">
+                                Diedit oleh <strong>{{ $riwayatTerbaru->user->name ?? 'Kontributor' }}</strong> ({{ $riwayatTerbaru->created_at ? $riwayatTerbaru->created_at->isoFormat('D MMMM Y, HH:mm') : '-' }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Box Jawaban Sebelumnya -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-xs font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                                JAWABAN SEBELUMNYA (VERSI LAMA)
+                            </h4>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                Sebelum Revisi
+                            </span>
+                        </div>
+                        <div class="text-sm leading-relaxed text-gray-600 bg-rose-50/20 p-4 rounded-xl border border-rose-200/70 whitespace-pre-line">
+                            {{ $riwayatTerbaru->jawaban_lama }}
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Box Jawaban Baru / Yang Diajukan -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold {{ $hasRevisi ? 'text-emerald-700' : 'text-gray-400' }} uppercase tracking-wider flex items-center gap-1.5">
+                            <span>{{ $hasRevisi ? 'JAWABAN BARU (HASIL REVISI)' : 'JAWABAN YANG DIAJUKAN' }}</span>
+                        </h4>
+                        @if($hasRevisi)
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Versi Terbaru
+                            </span>
+                        @endif
+                    </div>
+                    <div class="text-sm leading-relaxed text-gray-800 {{ $hasRevisi ? 'bg-emerald-50/20 border-emerald-200/70' : 'bg-gray-50/50 border-gray-100' }} p-4 rounded-xl border whitespace-pre-line">
+                        {{ $pertanyaan->isi_jawaban }}
+                    </div>
                 </div>
+
+                @if($pertanyaan->riwayatJawaban->count() > 1)
+                    <!-- Riwayat Revisi Lengkap (Accordion) -->
+                    <details class="group border border-gray-200 rounded-xl overflow-hidden text-xs">
+                        <summary class="flex items-center justify-between p-3 bg-gray-50/70 cursor-pointer select-none font-bold text-gray-700 hover:bg-gray-100 transition">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Lihat Seluruh Riwayat Revisi ({{ $pertanyaan->riwayatJawaban->count() }} kali diedit)
+                            </span>
+                            <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div class="p-4 space-y-3 bg-white divide-y divide-gray-100">
+                            @foreach($pertanyaan->riwayatJawaban as $idx => $r)
+                                <div class="pt-3 first:pt-0 space-y-1.5">
+                                    <div class="flex items-center justify-between text-[11px]">
+                                        <span class="font-bold text-gray-800">Revisi #{{ $pertanyaan->riwayatJawaban->count() - $idx }} oleh {{ $r->user->name ?? 'User' }}</span>
+                                        <span class="text-gray-400">{{ $r->created_at ? $r->created_at->isoFormat('D MMMM Y, HH:mm') : '-' }}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg whitespace-pre-line">
+                                        <span class="font-semibold text-gray-500 block text-[10px] mb-0.5">Jawaban Baru:</span>
+                                        {{ $r->jawaban_baru }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
             </div>
 
             <!-- Form Keputusan Validator -->

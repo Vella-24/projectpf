@@ -18,7 +18,8 @@ class ValidatorController extends Controller
         $query = Pertanyaan::with([
             'kategori',
             'user',
-            'validator'
+            'validator',
+            'riwayatJawaban.user',
         ])->latest();
 
         if ($status === 'semua') {
@@ -54,7 +55,7 @@ class ValidatorController extends Controller
      */
     public function show($id)
     {
-        $pertanyaan = Pertanyaan::with(['kategori', 'user', 'tags'])->findOrFail($id);
+        $pertanyaan = Pertanyaan::with(['kategori', 'user', 'tags', 'riwayatJawaban.user'])->findOrFail($id);
         return view('validator.show', compact('pertanyaan'));
     }
 

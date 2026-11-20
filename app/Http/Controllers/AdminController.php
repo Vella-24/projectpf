@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Pertanyaan;
 use App\Models\Kategori;
 use App\Models\Tag;
+use App\Models\RiwayatJawaban;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -178,8 +179,18 @@ class AdminController extends Controller
         unset($validated['tags']);
 
         $tagLama = $pertanyaan->tags()->pluck('tags.id')->toArray();
+        $jawabanLama = $pertanyaan->isi_jawaban;
 
         $pertanyaan->update($validated);
+
+        if ($jawabanLama !== $validated['isi_jawaban']) {
+            RiwayatJawaban::create([
+                'pertanyaan_id' => $pertanyaan->id,
+                'jawaban_lama' => $jawabanLama,
+                'jawaban_baru' => $validated['isi_jawaban'],
+                'user_id' => session('user.id') ?? auth()->id(),
+            ]);
+        }
 
         $idTags = [];
         foreach ($daftarTag as $namaTag) {
