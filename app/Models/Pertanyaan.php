@@ -17,6 +17,10 @@ class Pertanyaan extends Model
     public const DISETUJUI = 2;
     public const DITOLAK = 3;
 
+    // Status Pembaruan Kebijakan Baru
+    public const STATUS_PEMBARUAN_PERLU = 'perlu_pembaruan';
+    public const STATUS_PEMBARUAN_MENUNGGU = 'menunggu_validasi';
+
     protected $fillable = [
         'kategori_id',
         'fakultas',
@@ -24,6 +28,11 @@ class Pertanyaan extends Model
         'judul_pertanyaan',
         'isi_jawaban',
         'status',
+        'status_pembaruan',
+        'draft_jawaban',
+        'catatan_pembaruan',
+        'pembaruan_diminta_oleh',
+        'pembaruan_diminta_pada',
         'catatan_validator',
         'validator_id',
         'review_diambil_pada',
@@ -183,5 +192,52 @@ class Pertanyaan extends Model
     {
         return $this->hasOne(RiwayatJawaban::class, 'pertanyaan_id')
             ->latestOfMany();
+    }
+
+    public function pembaruanDimintaOlehUser()
+    {
+        return $this->belongsTo(User::class, 'pembaruan_diminta_oleh');
+    }
+
+    public function notifikasis()
+    {
+        return $this->hasMany(Notifikasi::class, 'pertanyaan_id');
+    }
+
+    /**
+     * Memeriksa apakah pertanyaan terkunci dari edit oleh Data Entry.
+     * Pertanyaan disetujui (2) terkunci KECUALI ada instruksi "perlu_pembaruan".
+     * Pertanyaan yang sedang menunggu validasi (1) juga terkunci.
+     */
+    public function isLockedForDataEntry(): bool
+    {
+        if ((int) $this->status === self::DISETUJUI) {
+            return $this->status_pembaruan !== self::STATUS_PEMBARUAN_PERLU;
+        }
+
+        if ((int) $this->status === self::MENUNGGU_VALIDASI) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Memeriksa apakah pertanyaan terkunci dari hapus oleh Data Entry.
+     * Pertanyaan yang sudah disetujui/tayang tidak boleh dihapus.
+     */
+    public function isLockedDeleteForDataEntry(): bool
+    {
+        return (int) $this->status === self::DISETUJUI;
+    }
+
+    public function getIsPerluPembaruanAttribute(): bool
+    {
+        return $this->status_pembaruan === self::STATUS_PEMBARUAN_PERLU;
+    }
+
+    public function getIsPembaruanMenungguValidasiAttribute(): bool
+    {
+        return $this->status_pembaruan === self::STATUS_PEMBARUAN_MENUNGGU;
     }
 }

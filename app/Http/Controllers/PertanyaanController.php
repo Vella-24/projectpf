@@ -6,6 +6,7 @@ use App\Models\Kategori;
 use App\Models\Pertanyaan;
 use App\Models\Tag;
 use App\Models\RiwayatJawaban;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 
 class PertanyaanController extends Controller
@@ -30,9 +31,13 @@ class PertanyaanController extends Controller
 
         // Filter berdasarkan status jika dipilih
         if ($request->filled('status')) {
-            $normalizedStatus = Pertanyaan::normalizeStatus($request->status);
-            if ($normalizedStatus !== null) {
-                $query->where('status', $normalizedStatus);
+            if ($request->status === 'perlu_pembaruan') {
+                $query->where('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_PERLU);
+            } else {
+                $normalizedStatus = Pertanyaan::normalizeStatus($request->status);
+                if ($normalizedStatus !== null) {
+                    $query->where('status', $normalizedStatus);
+                }
             }
         }
 
@@ -59,6 +64,7 @@ class PertanyaanController extends Controller
         $totalMenunggu  = (clone $queryStat)->where('status', 1)->count();
         $totalDisetujui = (clone $queryStat)->where('status', 2)->count();
         $totalDitolak   = (clone $queryStat)->where('status', 3)->count();
+        $totalPerluPembaruan = (clone $queryStat)->where('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_PERLU)->count();
 
         return view('pertanyaan.index', compact(
             'pertanyaans',
@@ -66,7 +72,8 @@ class PertanyaanController extends Controller
             'totalSemua',
             'totalMenunggu',
             'totalDisetujui',
-            'totalDitolak'
+            'totalDitolak',
+            'totalPerluPembaruan'
         ));
     }
 
@@ -175,10 +182,11 @@ class PertanyaanController extends Controller
         $tags = Tag::orderBy('nama_tag')->get();
         $daftarFakultas = \App\Helpers\FakultasHelper::getAll();
         $pertanyaan->load('tags');
-        if ($pertanyaan->status === 2) {
-        return redirect()->route('pertanyaan.index')
-            ->with('error', 'Pertanyaan yang sudah dipublish tidak dapat diedit lagi.');
-    }
+
+        if ($pertanyaan->isLockedForDataEntry()) {
+            return redirect()->route('pertanyaan.index')
+                ->with('error', 'Pertanyaan yang sudah disetujui dan tayang terkunci dan tidak dapat diedit tanpa adanya instruksi pembaruan dari Validator atau Super Admin.');
+        }
 
         return view('pertanyaan.edit', compact('pertanyaan', 'kategoris', 'tags', 'daftarFakultas'));
     }
@@ -271,11 +279,6 @@ class PertanyaanController extends Controller
             }
         }
 
-        if ($pertanyaan->status === 2) {
-            return redirect()->route('pertanyaan.index')
-                ->with('error', 'Pertanyaan yang sudah dipublish tidak dapat diedit lagi.');
-        }
-
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil diperbarui!');
     }
 
@@ -285,6 +288,11 @@ class PertanyaanController extends Controller
     public function destroy($id)
     {
         $pertanyaan = Pertanyaan::where('user_id', session('user.id'))->findOrFail($id);
+
+        if ($pertanyaan->isLockedDeleteForDataEntry()) {
+            return redirect()->route('pertanyaan.index')
+                ->with('error', 'Pertanyaan yang sudah disetujui dan tayang tidak dapat dihapus oleh Data Entry.');
+        }
 
         //simpen id tag yg digunakan pertanyaan ini
         $idTags = $pertanyaan->tags()->pluck('tags.id')->toArray();
@@ -301,8 +309,79 @@ class PertanyaanController extends Controller
             }
         }
 
-
         return redirect()->route('pertanyaan.index')->with('sukses', 'Data pertanyaan berhasil dihapus!');
+    }
+
+    /**
+     * Meminta pembaruan jawaban atas kebijakan baru (oleh Validator atau Super Admin)
+     */
+    public function mintaPembaruan(Request $request, $id)
+    {
+        $userRole = session('user.role');
+        if (!in_array($userRole, ['validator', 'super_admin'], true)) {
+            abort(403, 'Hanya Validator atau Super Admin yang dapat meminta pembaruan jawaban.');
+        }
+
+        $pertanyaan = Pertanyaan::findOrFail($id);
+
+        $validated = $request->validate([
+            'catatan_pembaruan' => 'required|string|max:1000',
+        ], [
+            'catatan_pembaruan.required' => 'Catatan arahan pembaruan kebijakan wajib diisi.',
+        ]);
+
+        $pertanyaan->update([
+            'status_pembaruan' => Pertanyaan::STATUS_PEMBARUAN_PERLU,
+            'catatan_pembaruan' => $validated['catatan_pembaruan'],
+            'pembaruan_diminta_oleh' => session('user.id'),
+            'pembaruan_diminta_pada' => now(),
+        ]);
+
+        // Buat notifikasi khusus untuk Data Entry pembuat pertanyaan
+        Notifikasi::create([
+            'user_id' => $pertanyaan->user_id,
+            'role' => 'data_entry',
+            'pertanyaan_id' => $pertanyaan->id,
+            'tipe' => 'perlu_pembaruan',
+            'judul' => 'Perlu Pembaruan Kebijakan Baru',
+            'pesan' => "Pertanyaan \"{$pertanyaan->judul_pertanyaan}\" memerlukan pembaruan jawaban kebijakan baru. Arahan: {$validated['catatan_pembaruan']}",
+            'link' => route('pertanyaan.edit', $pertanyaan->id),
+        ]);
+
+        return back()->with('sukses', 'Permintaan pembaruan jawaban berhasil dikirim ke Data Entry. Akses edit pertanyaan telah dibuka untuk Data Entry sementara jawaban lama tetap tayang di halaman mahasiswa.');
+    }
+
+    /**
+     * Menandai notifikasi telah dibaca
+     */
+    public function bacaNotifikasi($id)
+    {
+        $notifikasi = Notifikasi::findOrFail($id);
+        $notifikasi->update(['dibaca' => true]);
+
+        if ($notifikasi->link) {
+            return redirect($notifikasi->link);
+        }
+
+        return back()->with('sukses', 'Notifikasi telah ditandai dibaca.');
+    }
+
+    /**
+     * Menandai semua notifikasi pengguna sebagai telah dibaca
+     */
+    public function bacaSemuaNotifikasi()
+    {
+        $userId = session('user.id');
+        $userRole = session('user.role');
+
+        Notifikasi::where(function ($q) use ($userId, $userRole) {
+            $q->where('user_id', $userId)
+              ->orWhere('role', $userRole);
+        })
+        ->where('dibaca', false)
+        ->update(['dibaca' => true]);
+
+        return back()->with('sukses', 'Semua notifikasi telah ditandai sebagai dibaca.');
     }
 
     public function indexMahasiswa(Request $request)

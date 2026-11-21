@@ -23,6 +23,7 @@
         $riwayatTerbaru = $p->riwayatJawaban->first();
         $jawabanLama = $riwayatTerbaru ? $riwayatTerbaru->jawaban_lama : null;
         $hasRevisi = !empty($jawabanLama);
+        $isPembaruan = $p->status_pembaruan === \App\Models\Pertanyaan::STATUS_PEMBARUAN_MENUNGGU;
 
         return [
             'id' => $p->id,
@@ -36,12 +37,18 @@
             'revisi_waktu' => $riwayatTerbaru && $riwayatTerbaru->created_at ? $riwayatTerbaru->created_at->isoFormat('D MMMM Y, HH:mm') : null,
             'total_revisi' => $p->riwayatJawaban ? $p->riwayatJawaban->count() : 0,
             'status' => $p->status,
+            'status_pembaruan' => $p->status_pembaruan,
+            'is_pembaruan' => $isPembaruan,
+            'draft_jawaban' => $p->draft_jawaban,
+            'catatan_pembaruan' => $p->catatan_pembaruan,
+            'pembaruan_oleh' => $p->pembaruanDimintaOlehUser->name ?? 'Validator / Super Admin',
+            'minta_pembaruan_url' => route('pertanyaan.mintaPembaruan', $p->id),
             'validator_id' => $p->validator_id,
             'validator_name' => $p->validator->name ?? null,
-            'boleh_review' => (int) $p->status === 1
+            'boleh_review' => ((int) $p->status === 1 || $isPembaruan)
             && $p->validator_id !== null
             && (int) $p->validator_id === (int) session('user.id'),
-            'status_label' => match ((int) $p->status) {
+            'status_label' => $isPembaruan ? 'Pembaruan Diajukan' : match ((int) $p->status) {
                 0 => 'Draft',
                 1 => 'Menunggu',
                 2 => 'Disetujui',
@@ -149,7 +156,12 @@
                                 <span class="w-1.5 h-1.5 rounded-full {{ (int)$item['status'] === 1 ? 'bg-amber-500' : ((int)$item['status'] === 2 ? 'bg-emerald-500' : 'bg-rose-500') }}"></span>
                                 {{ $item['status_label'] }}
                             </span>
-                            @if($item['has_revisi'])
+                            @if($item['is_pembaruan'])
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    Kebijakan Baru
+                                </span>
+                            @elseif($item['has_revisi'])
                                 <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     Revisi
@@ -283,6 +295,26 @@
                 </div>
             </div>
 
+            <!-- Info Banner Jika Pembaruan Kebijakan Diajukan -->
+            <div id="detailPembaruanBanner" class="{{ ($firstItem['is_pembaruan'] ?? false) ? '' : 'hidden' }} p-4 bg-purple-50 border border-purple-200 rounded-2xl text-xs space-y-2 text-purple-950 mb-5 shadow-2xs">
+                <div class="flex items-center justify-between">
+                    <span class="font-extrabold flex items-center gap-1.5 text-purple-900 text-sm">
+                        <svg class="w-4 h-4 text-purple-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Pembaruan Jawaban Kebijakan Baru Diajukan
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-200 text-purple-900">
+                        Menunggu Validasi
+                    </span>
+                </div>
+                <p class="text-xs text-purple-900 bg-white/70 p-2.5 rounded-xl border border-purple-100">
+                    Arahan perubahan: <strong id="detailPembaruanCatatan">{{ $firstItem['catatan_pembaruan'] ?? '' }}</strong>
+                </p>
+                <div class="text-[11px] text-purple-700 flex items-center justify-between flex-wrap gap-2 pt-0.5">
+                    <span>Diminta oleh: <strong id="detailPembaruanOleh">{{ $firstItem['pembaruan_oleh'] ?? '' }}</strong></span>
+                    <span class="text-emerald-700 font-bold">✓ Jawaban lama masih tayang di mahasiswa</span>
+                </div>
+            </div>
+
             <!-- Informasi siapa yang mengambil review -->
             <div id="detailValidatorInfo" class="mb-5 text-sm font-semibold"></div>
 
@@ -377,6 +409,18 @@
                     Kamu tidak dapat memvalidasi pertanyaan ini karena sedang direview oleh Validator lain.
                 </p>
             </form>
+
+            <!-- Box Minta Pembaruan Kebijakan (Hanya untuk FAQ yang sudah disetujui / status 2 dan tidak sedang dalam pembaruan) -->
+            <div id="boxMintaPembaruan" class="{{ (int)($firstItem['status'] ?? 0) === 2 && !($firstItem['is_pembaruan'] ?? false) && ($firstItem['status_pembaruan'] ?? null) !== 'perlu_pembaruan' ? '' : 'hidden' }} mt-6 pt-5 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h4 class="text-xs font-bold text-gray-800">Ada Perubahan Kebijakan Baru?</h4>
+                    <p class="text-[11px] text-gray-400">Instruksikan Data Entry untuk memperbarui jawaban FAQ yang sedang tayang ini.</p>
+                </div>
+                <button type="button" onclick="openModalMintaPembaruan()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition cursor-pointer shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span>Minta Pembaruan</span>
+                </button>
+            </div>
             @else
             <!-- Placeholder saat tidak ada data -->
             <div class="h-full min-h-[460px] flex flex-col items-center justify-center text-center p-8 text-gray-400">
@@ -391,6 +435,38 @@
             @endif
         </div>
 
+    </div>
+
+    <!-- Modal Minta Pembaruan Kebijakan -->
+    <div id="modalMintaPembaruan" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-gray-100 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <h3 class="text-base font-extrabold text-gray-900">Minta Pembaruan Kebijakan</h3>
+                </div>
+                <button type="button" onclick="closeModalMintaPembaruan()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">✕</button>
+            </div>
+            <form id="formMintaPembaruan" action="{{ $firstItem ? $firstItem['minta_pembaruan_url'] : '' }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="modalCatatanPembaruan" class="block text-xs font-bold text-gray-800 mb-1">
+                        Catatan Arahan Kebijakan Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <p class="text-[11px] text-gray-400 mb-2">Tuliskan instruksi atau poin kebijakan baru yang harus disesuaikan oleh Data Entry.</p>
+                    <textarea id="modalCatatanPembaruan" name="catatan_pembaruan" rows="4" required placeholder="Contoh: Perbarui jawaban sesuai SK Rektor No. 12/2026 mengenai perpanjangan masa pembayaran SPP..." class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:bg-white focus:outline-none focus:border-[#741228] transition leading-relaxed"></textarea>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-medium leading-relaxed">
+                    ⚠️ <strong>Informasi Alur:</strong> Notifikasi "Perlu Pembaruan" akan dikirimkan ke Data Entry dan tombol edit FAQ ini otomatis terbuka. Jawaban lama <u>tetap tayang</u> di halaman mahasiswa sampai jawaban baru Anda setujui.
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModalMintaPembaruan()" class="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#741228] hover:bg-[#5e0d1f] shadow-sm">Kirim ke Data Entry</button>
+                </div>
+            </form>
+        </div>
     </div>
 @endsection
 
@@ -458,7 +534,7 @@
         const elCatatan = document.getElementById('detailCatatan');
         if (elCatatan) elCatatan.value = item.catatan || '';
 
-        // Update perbandingan revisi
+        <!-- Update perbandingan revisi / pembaruan kebijakan -->
         const revisiBanner = document.getElementById('detailRevisiBanner');
         const revisiMeta = document.getElementById('detailRevisiMeta');
         const revisiBox = document.getElementById('detailRevisiBox');
@@ -466,23 +542,86 @@
         const elJudulJawaban = document.getElementById('detailJudulJawaban');
         const elJudulJawabanText = document.getElementById('detailJudulJawabanText');
         const elBadgeJawabanBaru = document.getElementById('detailBadgeJawabanBaru');
+        const pembaruanBanner = document.getElementById('detailPembaruanBanner');
+        const pembaruanCatatan = document.getElementById('detailPembaruanCatatan');
+        const pembaruanOleh = document.getElementById('detailPembaruanOleh');
+        const boxMintaPembaruan = document.getElementById('boxMintaPembaruan');
+        const formMintaPembaruan = document.getElementById('formMintaPembaruan');
 
-        if (item.has_revisi && item.jawaban_lama) {
+        if (item.is_pembaruan) {
+            if (pembaruanBanner) pembaruanBanner.classList.remove('hidden');
+            if (pembaruanCatatan) pembaruanCatatan.textContent = item.catatan_pembaruan || '-';
+            if (pembaruanOleh) pembaruanOleh.textContent = item.pembaruan_oleh || 'Validator / Super Admin';
+
+            if (revisiBanner) revisiBanner.classList.add('hidden');
+            if (revisiBox) revisiBox.classList.remove('hidden');
+            if (elJawabanLama) elJawabanLama.textContent = item.jawaban;
+            
+            const titleLama = revisiBox.querySelector('h4');
+            if (titleLama) titleLama.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> JAWABAN LAMA (SEDANG TAYANG DI MAHASISWA)';
+            const badgeLama = revisiBox.querySelector('span');
+            if (badgeLama) {
+                badgeLama.textContent = 'Sedang Tayang';
+                badgeLama.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+            }
+
+            if (elJudulJawaban) elJudulJawaban.className = "text-xs font-bold text-purple-700 uppercase tracking-wider flex items-center gap-1.5";
+            if (elJudulJawabanText) elJudulJawabanText.textContent = "JAWABAN BARU (DIAJUKAN SESUAI KEBIJAKAN BARU)";
+            if (elBadgeJawabanBaru) {
+                elBadgeJawabanBaru.classList.remove('hidden');
+                elBadgeJawabanBaru.textContent = "Diajukan Baru";
+                elBadgeJawabanBaru.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200';
+            }
+            if (elJawaban) {
+                elJawaban.textContent = item.draft_jawaban || item.jawaban;
+                elJawaban.className = "text-sm leading-relaxed text-gray-800 bg-purple-50/20 border-purple-200/70 p-4 rounded-xl border whitespace-pre-line";
+            }
+        } else if (item.has_revisi && item.jawaban_lama) {
+            if (pembaruanBanner) pembaruanBanner.classList.add('hidden');
             if (revisiBanner) revisiBanner.classList.remove('hidden');
             if (revisiMeta) revisiMeta.innerHTML = `Diedit oleh <strong>${item.revisi_user || 'Kontributor'}</strong> (${item.revisi_waktu || '-'})`;
             if (revisiBox) revisiBox.classList.remove('hidden');
             if (elJawabanLama) elJawabanLama.textContent = item.jawaban_lama;
+            
+            const titleLama = revisiBox.querySelector('h4');
+            if (titleLama) titleLama.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg> JAWABAN SEBELUMNYA (VERSI LAMA)';
+            const badgeLama = revisiBox.querySelector('span');
+            if (badgeLama) {
+                badgeLama.textContent = 'Sebelum Revisi';
+                badgeLama.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200';
+            }
+
             if (elJudulJawaban) elJudulJawaban.className = "text-xs font-bold text-emerald-700 uppercase tracking-wider flex items-center gap-1.5";
             if (elJudulJawabanText) elJudulJawabanText.textContent = "JAWABAN BARU (HASIL REVISI)";
-            if (elBadgeJawabanBaru) elBadgeJawabanBaru.classList.remove('hidden');
-            if (elJawaban) elJawaban.className = "text-sm leading-relaxed text-gray-800 bg-emerald-50/20 border-emerald-200/70 p-4 rounded-xl border whitespace-pre-line";
+            if (elBadgeJawabanBaru) {
+                elBadgeJawabanBaru.classList.remove('hidden');
+                elBadgeJawabanBaru.textContent = "Versi Terbaru";
+                elBadgeJawabanBaru.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+            }
+            if (elJawaban) {
+                elJawaban.textContent = item.jawaban;
+                elJawaban.className = "text-sm leading-relaxed text-gray-800 bg-emerald-50/20 border-emerald-200/70 p-4 rounded-xl border whitespace-pre-line";
+            }
         } else {
+            if (pembaruanBanner) pembaruanBanner.classList.add('hidden');
             if (revisiBanner) revisiBanner.classList.add('hidden');
             if (revisiBox) revisiBox.classList.add('hidden');
             if (elJudulJawaban) elJudulJawaban.className = "text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5";
             if (elJudulJawabanText) elJudulJawabanText.textContent = "JAWABAN YANG DIAJUKAN";
             if (elBadgeJawabanBaru) elBadgeJawabanBaru.classList.add('hidden');
-            if (elJawaban) elJawaban.className = "text-sm leading-relaxed text-gray-700 bg-gray-50/50 border-gray-100 p-4 rounded-xl border whitespace-pre-line";
+            if (elJawaban) {
+                elJawaban.textContent = item.jawaban;
+                elJawaban.className = "text-sm leading-relaxed text-gray-700 bg-gray-50/50 border-gray-100 p-4 rounded-xl border whitespace-pre-line";
+            }
+        }
+
+        // Tampilkan tombol Minta Pembaruan jika disetujui (status 2) dan tidak sedang dalam pembaruan
+        if (boxMintaPembaruan) {
+            const bolehMinta = Number(item.status) === 2 && !item.is_pembaruan && item.status_pembaruan !== 'perlu_pembaruan';
+            boxMintaPembaruan.classList.toggle('hidden', !bolehMinta);
+        }
+        if (formMintaPembaruan) {
+            formMintaPembaruan.action = item.minta_pembaruan_url;
         }
 
         const formReview = document.getElementById('formReview');
@@ -502,39 +641,29 @@
 
         // Tampilkan informasi status review
         if (validatorInfo) {
-
-            if (item.status !== 'menunggu_validasi') {
-
-                validatorInfo.textContent =
-                    'FAQ ini sudah selesai divalidasi.';
-
-                validatorInfo.className =
-                    'mb-5 text-sm font-semibold text-gray-500';
-
+            if (item.is_pembaruan) {
+                if (bolehReview) {
+                    validatorInfo.textContent = 'Kamu sedang mereview pengajuan pembaruan kebijakan ini.';
+                    validatorInfo.className = 'mb-5 text-sm font-semibold text-purple-700';
+                } else if (item.validator_id != null) {
+                    validatorInfo.textContent = 'Sedang direview oleh ' + (item.validator_name || 'Validator');
+                    validatorInfo.className = 'mb-5 text-sm font-semibold text-blue-600';
+                } else {
+                    validatorInfo.textContent = 'Pengajuan pembaruan kebijakan baru. Klik Ambil untuk Direview terlebih dahulu.';
+                    validatorInfo.className = 'mb-5 text-sm font-semibold text-amber-600';
+                }
+            } else if (Number(item.status) !== 1) {
+                validatorInfo.textContent = 'FAQ ini sudah selesai divalidasi.';
+                validatorInfo.className = 'mb-5 text-sm font-semibold text-gray-500';
             } else if (bolehReview) {
-
-                validatorInfo.textContent =
-                    'Kamu sedang mereview pertanyaan ini.';
-
-                validatorInfo.className =
-                    'mb-5 text-sm font-semibold text-emerald-600';
-
+                validatorInfo.textContent = 'Kamu sedang mereview pertanyaan ini.';
+                validatorInfo.className = 'mb-5 text-sm font-semibold text-emerald-600';
             } else if (item.validator_id != null) {
-
-                validatorInfo.textContent =
-                    'Sedang direview oleh ' +
-                    (item.validator_name || 'Validator');
-
-                validatorInfo.className =
-                    'mb-5 text-sm font-semibold text-blue-600';
-
+                validatorInfo.textContent = 'Sedang direview oleh ' + (item.validator_name || 'Validator');
+                validatorInfo.className = 'mb-5 text-sm font-semibold text-blue-600';
             } else {
-
-                validatorInfo.textContent =
-                    'Belum ada Validator yang mengambil review. Klik Ambil untuk Direview terlebih dahulu.';
-
-                validatorInfo.className =
-                    'mb-5 text-sm font-semibold text-amber-600';
+                validatorInfo.textContent = 'Belum ada Validator yang mengambil review. Klik Ambil untuk Direview terlebih dahulu.';
+                validatorInfo.className = 'mb-5 text-sm font-semibold text-amber-600';
             }
         }
 
@@ -542,7 +671,10 @@
         const badge = document.getElementById('detailStatusBadge');
         const dot = document.getElementById('detailStatusDot');
         if (badge && dot) {
-            if (Number(item.status) === 1) {
+            if (item.is_pembaruan) {
+                badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200/60";
+                dot.className = "w-1.5 h-1.5 rounded-full bg-purple-500";
+            } else if (Number(item.status) === 1) {
                 badge.className = "inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200/60";
                 dot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
             } else if (Number(item.status) === 2) {
@@ -653,8 +785,18 @@
         
     }
 
+    function openModalMintaPembaruan() {
+        const m = document.getElementById('modalMintaPembaruan');
+        if (m) m.classList.remove('hidden');
+    }
+
+    function closeModalMintaPembaruan() {
+        const m = document.getElementById('modalMintaPembaruan');
+        if (m) m.classList.add('hidden');
+    }
+
     if (activeId !== null) {
-            selectItem(activeId);
-        }
+        selectItem(activeId);
+    }
 </script>
 @endsection

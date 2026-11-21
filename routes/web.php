@@ -51,6 +51,16 @@ Route::get('/logout', [LoginController::class, 'logout']);
 Route::resource('pertanyaan', PertanyaanController::class)
     ->except(['index']);
 
+// Route Minta Pembaruan Kebijakan (Validator & Super Admin)
+Route::post('/pertanyaan/{id}/minta-pembaruan', [PertanyaanController::class, 'mintaPembaruan'])
+    ->name('pertanyaan.mintaPembaruan');
+
+// Route Notifikasi
+Route::post('/notifikasi/{id}/baca', [PertanyaanController::class, 'bacaNotifikasi'])
+    ->name('notifikasi.baca');
+Route::post('/notifikasi/baca-semua', [PertanyaanController::class, 'bacaSemuaNotifikasi'])
+    ->name('notifikasi.bacaSemua');
+
 // Resource Route untuk CRUD Kategori
 Route::resource('kategori', KategoriController::class);
 

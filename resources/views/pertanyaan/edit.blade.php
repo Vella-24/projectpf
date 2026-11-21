@@ -27,22 +27,33 @@
 
             <!-- Tombol Aksi Simpan Draf & Kirim Validasi -->
             <div class="flex items-center gap-3">
-                <!-- Simpan sebagai Draf -->
-                <button type="button" 
-                        onclick="submitDenganStatus('draft')" 
-                        class="btn-submit-action px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow">
-                    Simpan Draf
-                </button>
+                @if($pertanyaan->is_perlu_pembaruan)
+                    <button type="button" 
+                            onclick="submitDenganStatus('menunggu_validasi')" 
+                            class="btn-submit-action inline-flex items-center gap-2 px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                        <span>Kirim Pembaruan ke Validator</span>
+                    </button>
+                @else
+                    <!-- Simpan sebagai Draf -->
+                    <button type="button" 
+                            onclick="submitDenganStatus('draft')" 
+                            class="btn-submit-action px-5 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-2xl text-xs font-bold transition shadow-sm hover:shadow">
+                        Simpan Draf
+                    </button>
 
-                <!-- Kirim Ulang untuk Validasi -->
-                <button type="button" 
-                        onclick="submitDenganStatus('menunggu_validasi')" 
-                        class="btn-submit-action inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg">
-                    <span>Kirim untuk Validasi</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                </button>
+                    <!-- Kirim Ulang untuk Validasi -->
+                    <button type="button" 
+                            onclick="submitDenganStatus('menunggu_validasi')" 
+                            class="btn-submit-action inline-flex items-center gap-2 px-6 py-2.5 bg-[#741228] hover:bg-[#5e0d1f] text-white rounded-2xl text-xs font-bold transition shadow-md hover:shadow-lg">
+                        <span>Kirim untuk Validasi</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -52,7 +63,12 @@
                 <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                     Ubah pengetahuan
                 </h1>
-                @if((int)$pertanyaan->status === 1)
+                @if($pertanyaan->is_perlu_pembaruan)
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                        Perlu Pembaruan Kebijakan
+                    </span>
+                @elseif((int)$pertanyaan->status === 1)
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                         Menunggu Validasi
@@ -78,6 +94,40 @@
                 Perbarui pertanyaan, jawaban, atau perbaiki catatan dari validator.
             </p>
         </div>
+
+        <!-- Alert Arahan Pembaruan Kebijakan Baru jika ada -->
+        @if($pertanyaan->is_perlu_pembaruan)
+            <div class="bg-amber-50 border-2 border-amber-300 text-amber-950 p-5 rounded-2xl mb-6 text-xs shadow-sm flex items-start gap-3.5">
+                <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div class="space-y-1.5 flex-1">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <span class="font-extrabold text-sm text-amber-950">Arahan Pembaruan Kebijakan Baru:</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                            Akses Edit Terbuka
+                        </span>
+                    </div>
+                    <p class="text-xs text-amber-900 font-semibold leading-relaxed bg-amber-100/60 p-3 rounded-xl border border-amber-200">
+                        {{ $pertanyaan->catatan_pembaruan }}
+                    </p>
+                    <div class="text-[11px] text-amber-800 font-medium pt-1 flex items-center justify-between flex-wrap gap-2">
+                        <span>
+                            Diminta oleh: <strong>{{ $pertanyaan->pembaruanDimintaOlehUser->name ?? 'Validator / Super Admin' }}</strong>
+                            @if($pertanyaan->pembaruan_diminta_pada)
+                                &bull; {{ \Carbon\Carbon::parse($pertanyaan->pembaruan_diminta_pada)->isoFormat('D MMMM Y, HH:mm') }}
+                            @endif
+                        </span>
+                        <span class="text-emerald-700 font-bold flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            Jawaban lama tetap tayang di mahasiswa
+                        </span>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Alert Catatan Validator jika statusnya ditolak / revisi -->
         @if($pertanyaan->catatan_validator)
@@ -229,17 +279,38 @@
                     <h2 class="text-base font-bold text-gray-900 tracking-tight">Jawaban</h2>
                 </div>
 
+                @if($pertanyaan->is_perlu_pembaruan)
+                    <!-- Tampilan Jawaban Saat Ini yang Tetap Tayang di Mahasiswa -->
+                    <div class="p-4 bg-emerald-50/40 border border-emerald-200 rounded-2xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                Jawaban Saat Ini (Sedang Tayang di Mahasiswa)
+                            </span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                Tetap Aktif
+                            </span>
+                        </div>
+                        <div class="text-xs sm:text-sm text-gray-700 bg-white p-3.5 rounded-xl border border-emerald-100 whitespace-pre-line leading-relaxed">
+                            {{ $pertanyaan->isi_jawaban }}
+                        </div>
+                        <p class="text-[11px] text-emerald-800 font-medium">
+                            * Jawaban di atas tidak akan berubah di halaman mahasiswa sampai jawaban baru Anda di bawah ini disetujui oleh Validator.
+                        </p>
+                    </div>
+                @endif
+
                 <!-- Jawaban Terverifikasi * -->
                 <div>
                     <label for="isi_jawaban" class="block text-xs font-bold text-gray-800 mb-1">
-                        Jawaban terverifikasi <span class="text-rose-500">*</span>
+                        {{ $pertanyaan->is_perlu_pembaruan ? 'Jawaban Baru yang Diajukan (Sesuai Arahan Kebijakan Baru)' : 'Jawaban terverifikasi' }} <span class="text-rose-500">*</span>
                     </label>
                     <textarea id="isi_jawaban" 
                               name="isi_jawaban" 
                               rows="6" 
                               placeholder="Tuliskan jawaban yang jelas, ringkas, dan mudah dipahami mahasiswa..." 
                               required 
-                              class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-sm resize-y leading-relaxed">{{ old('isi_jawaban', $pertanyaan->isi_jawaban) }}</textarea>
+                              class="w-full px-4 py-3 bg-white rounded-2xl border border-gray-200 text-xs sm:text-sm font-medium text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition shadow-sm resize-y leading-relaxed">{{ old('isi_jawaban', $pertanyaan->is_perlu_pembaruan ? ($pertanyaan->draft_jawaban ?? $pertanyaan->isi_jawaban) : $pertanyaan->isi_jawaban) }}</textarea>
                 </div>
 
                 <!-- Kata Kunci (Tag System Asli yang dipertahankan) -->

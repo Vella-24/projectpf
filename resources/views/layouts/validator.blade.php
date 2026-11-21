@@ -158,13 +158,74 @@
 
                 <!-- Right Header: Notification & Profile Button (Trigger Toggle Sidebar) -->
                 <div class="flex items-center gap-3 sm:gap-4">
-                    <!-- Notification Bell -->
-                    <button type="button" class="relative p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition" title="Notifikasi">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
-                    </button>
+                    <!-- Notification Bell & Dropdown -->
+                    <div class="relative" id="notifWrapper">
+                        <button type="button" onclick="toggleNotifDropdown()" class="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 shadow-sm transition hover:bg-gray-50 relative cursor-pointer" title="Notifikasi">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            @if(($globalUnreadNotifikasiCount ?? 0) > 0)
+                                <span class="absolute -top-1 -right-1 px-1.5 py-0.5 text-[10px] font-extrabold bg-rose-600 text-white rounded-full ring-2 ring-white">
+                                    {{ $globalUnreadNotifikasiCount > 9 ? '9+' : $globalUnreadNotifikasiCount }}
+                                </span>
+                            @endif
+                        </button>
+
+                        <!-- Dropdown Content -->
+                        <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                            <div class="p-3.5 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-gray-800">Notifikasi</span>
+                                    @if(($globalUnreadNotifikasiCount ?? 0) > 0)
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100">
+                                            {{ $globalUnreadNotifikasiCount }} baru
+                                        </span>
+                                    @endif
+                                </div>
+                                @if(($globalUnreadNotifikasiCount ?? 0) > 0)
+                                    <form action="{{ route('notifikasi.bacaSemua') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-[11px] font-semibold text-[#741228] hover:underline cursor-pointer">
+                                            Tandai semua dibaca
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                            <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                                @forelse(($globalNotifikasis ?? []) as $notif)
+                                    <form action="{{ route('notifikasi.baca', $notif->id) }}" method="POST" class="block hover:bg-rose-50/20 transition cursor-pointer {{ $notif->dibaca ? 'opacity-70 bg-white' : 'bg-rose-50/10 font-semibold' }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left p-3.5 flex items-start gap-3 cursor-pointer">
+                                            <div class="w-8 h-8 rounded-full {{ $notif->tipe === 'pembaruan_diajukan' ? 'bg-purple-100 text-purple-700' : ($notif->tipe === 'perlu_pembaruan' ? 'bg-amber-100 text-amber-700' : ($notif->tipe === 'pembaruan_disetujui' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700')) }} flex items-center justify-center shrink-0 mt-0.5">
+                                                @if($notif->tipe === 'pembaruan_diajukan')
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                                @elseif($notif->tipe === 'perlu_pembaruan')
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                                @elseif($notif->tipe === 'pembaruan_disetujui')
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                @else
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs text-gray-900 leading-snug">{{ $notif->judul }}</p>
+                                                <p class="text-[11px] text-gray-500 line-clamp-2 mt-0.5 font-normal">{{ $notif->pesan }}</p>
+                                                <span class="text-[10px] text-gray-400 mt-1 block">{{ $notif->created_at ? $notif->created_at->diffForHumans() : '-' }}</span>
+                                            </div>
+                                            @if(!$notif->dibaca)
+                                                <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0 mt-1.5"></span>
+                                            @endif
+                                        </button>
+                                    </form>
+                                @empty
+                                    <div class="p-6 text-center text-gray-400 text-xs">
+                                        <svg class="w-8 h-8 mx-auto text-gray-300 mb-1" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                        Belum ada notifikasi baru
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Profile Info Display (Static, Tidak memicu sidebar) -->
                     <div class="flex items-center gap-2.5 p-1 text-left">
@@ -187,7 +248,7 @@
 
     </div>
 
-    <!-- Toggle Sidebar JavaScript -->
+    <!-- Toggle Sidebar & Notifikasi JavaScript -->
     <script>
         function toggleSidebar() {
             const sidebar = document.getElementById('leftSidebar');
@@ -203,6 +264,21 @@
                 sidebar.classList.add('w-0', 'opacity-0', 'pointer-events-none');
             }
         }
+
+        function toggleNotifDropdown() {
+            const dropdown = document.getElementById('notifDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+            }
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('notifWrapper');
+            const dropdown = document.getElementById('notifDropdown');
+            if (wrapper && dropdown && !wrapper.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
     </script>
 
     @yield('scripts')

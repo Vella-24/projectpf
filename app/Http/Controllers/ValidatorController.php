@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pertanyaan;
+use App\Models\RiwayatJawaban;
+use App\Models\Notifikasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -20,15 +22,30 @@ class ValidatorController extends Controller
             'user',
             'validator',
             'riwayatJawaban.user',
+            'pembaruanDimintaOlehUser',
         ])->latest();
 
         if ($status === 'semua') {
-            $query->whereIn('status', [1, 2, 3]);
-        } elseif (in_array((string) $status, ['1', '2', '3'], true)) {
+            $query->where(function($q) {
+                $q->whereIn('status', [1, 2, 3])
+                  ->orWhere('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_MENUNGGU);
+            });
+        } elseif ($status === 'pembaruan') {
+            $query->where('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_MENUNGGU);
+        } elseif ($status === '1') {
+            // Default tab: Menunggu Validasi (termasuk pengajuan baru & pembaruan kebijakan)
+            $query->where(function($q) {
+                $q->where('status', 1)
+                  ->orWhere('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_MENUNGGU);
+            });
+        } elseif (in_array((string) $status, ['2', '3'], true)) {
             $query->where('status', (int) $status);
         } else {
             $status = '1';
-            $query->where('status', 1);
+            $query->where(function($q) {
+                $q->where('status', 1)
+                  ->orWhere('status_pembaruan', Pertanyaan::STATUS_PEMBARUAN_MENUNGGU);
+            });
         }
 
         if ($request->filled('q')) {
@@ -86,6 +103,70 @@ class ValidatorController extends Controller
             'catatan_validator' => 'nullable|string|max:1000',
         ]);
 
+        // PEMERIKSAAN PEMBARUAN JAWABAN KEBIJAKAN BARU
+        if ($pertanyaan->is_pembaruan_menunggu_validasi) {
+            $isApproved = (int) $validated['status'] === Pertanyaan::DISETUJUI;
+
+            if ($isApproved) {
+                // Simpan jawaban lama ke riwayat arsip
+                RiwayatJawaban::create([
+                    'pertanyaan_id' => $pertanyaan->id,
+                    'jawaban_lama' => $pertanyaan->isi_jawaban,
+                    'jawaban_baru' => $pertanyaan->draft_jawaban,
+                    'user_id' => $pertanyaan->user_id ?? session('user.id'),
+                ]);
+
+                // Update jawaban tayang dengan jawaban baru yang disetujui, lalu kunci kembali
+                $pertanyaan->update([
+                    'isi_jawaban' => $pertanyaan->draft_jawaban,
+                    'draft_jawaban' => null,
+                    'status_pembaruan' => null,
+                    'catatan_pembaruan' => null,
+                    'catatan_validator' => $validated['catatan_validator'] ?? null,
+                ]);
+
+                try {
+                    $pertanyaan->searchable();
+                } catch (\Throwable $e) {}
+
+                Notifikasi::create([
+                    'user_id' => $pertanyaan->user_id,
+                    'role' => 'data_entry',
+                    'pertanyaan_id' => $pertanyaan->id,
+                    'tipe' => 'pembaruan_disetujui',
+                    'judul' => 'Pembaruan Jawaban Disetujui',
+                    'pesan' => "Pembaruan jawaban untuk \"{$pertanyaan->judul_pertanyaan}\" telah disetujui oleh Validator dan langsung tayang menggantikan jawaban lama.",
+                    'link' => route('pertanyaan.show', $pertanyaan->id),
+                ]);
+
+                $redirectStatus = $request->input('redirect_status', '1');
+                return redirect()->route('validator.index', ['status' => $redirectStatus])
+                    ->with('sukses', 'Pembaruan jawaban berhasil disetujui! Jawaban baru langsung tayang di halaman mahasiswa dan pertanyaan kembali terkunci.');
+            } else {
+                // Ditolak: jawaban lama tetap tayang di halaman mahasiswa, Data Entry diminta memperbaiki ulang
+                $catatan = $validated['catatan_validator'] ?? 'Mohon perbaiki ulang sesuai arahan validator.';
+                $pertanyaan->update([
+                    'status_pembaruan' => Pertanyaan::STATUS_PEMBARUAN_PERLU,
+                    'catatan_pembaruan' => $catatan,
+                    'catatan_validator' => $catatan,
+                ]);
+
+                Notifikasi::create([
+                    'user_id' => $pertanyaan->user_id,
+                    'role' => 'data_entry',
+                    'pertanyaan_id' => $pertanyaan->id,
+                    'tipe' => 'pembaruan_ditolak',
+                    'judul' => 'Pembaruan Jawaban Perlu Perbaikan',
+                    'pesan' => "Pembaruan jawaban untuk \"{$pertanyaan->judul_pertanyaan}\" ditolak dan memerlukan perbaikan ulang. Catatan: {$catatan}",
+                    'link' => route('pertanyaan.edit', $pertanyaan->id),
+                ]);
+
+                $redirectStatus = $request->input('redirect_status', '1');
+                return redirect()->route('validator.index', ['status' => $redirectStatus])
+                    ->with('sukses', 'Pembaruan jawaban ditolak untuk diperbaiki ulang oleh Data Entry. Jawaban lama tetap aktif tayang di halaman mahasiswa.');
+            }
+        }
+
         $pertanyaan->update([
             'status' => (int) $validated['status'],
             'catatan_validator' => $validated['catatan_validator'] ?? null,
@@ -122,7 +203,7 @@ class ValidatorController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($pertanyaan->status !== Pertanyaan::MENUNGGU_VALIDASI) {
+            if ($pertanyaan->status !== Pertanyaan::MENUNGGU_VALIDASI && $pertanyaan->status_pembaruan !== Pertanyaan::STATUS_PEMBARUAN_MENUNGGU) {
                 return 'selesai';
             }
 

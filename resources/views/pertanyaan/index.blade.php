@@ -47,6 +47,32 @@
         </div>
     @endif
 
+    <!-- Alert Notifikasi Perlu Pembaruan Kebijakan Baru -->
+    @if(($totalPerluPembaruan ?? 0) > 0)
+        <div class="bg-amber-50 border-2 border-amber-300 text-amber-900 p-4 sm:p-5 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div class="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm animate-pulse">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm sm:text-base font-extrabold text-amber-950">
+                        {{ $totalPerluPembaruan }} Pertanyaan Memerlukan Pembaruan Jawaban (Kebijakan Baru)
+                    </h3>
+                    <p class="text-xs text-amber-800 font-medium mt-0.5">
+                        Validator atau Super Admin meminta penyesuaian jawaban kebijakan baru. Tombol edit terbuka khusus untuk Anda, sementara jawaban lama tetap tayang di mahasiswa.
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('pertanyaan.index', ['status' => 'perlu_pembaruan']) }}" 
+               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-sm shrink-0">
+                <span>Lihat Pertanyaan</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    @endif
+
     <!-- 4 Kartu Ringkasan Interaktif / Quick Filter (Klik untuk filter instan) -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
         
@@ -218,6 +244,7 @@
                 <select name="status" 
                         class="w-full px-3 py-2 bg-white rounded-xl border border-gray-200 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#741228]/20 focus:border-[#741228] transition">
                     <option value="">Semua Status</option>
+                    <option value="perlu_pembaruan" {{ request('status') === 'perlu_pembaruan' ? 'selected' : '' }}>⚠️ Perlu Pembaruan ({{ $totalPerluPembaruan ?? 0 }})</option>
                     <option value="0" {{ (string)request('status') === '0' || request('status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="1" {{ (string)request('status') === '1' || request('status') === 'menunggu_validasi' ? 'selected' : '' }}>Menunggu Validasi</option>
                     <option value="2" {{ (string)request('status') === '2' || request('status') === 'disetujui' ? 'selected' : '' }}>Disetujui</option>
@@ -279,7 +306,17 @@
 
                             <!-- Status Badge dengan Titik Warna (Dot) -->
                             <td class="py-4 px-4 whitespace-nowrap">
-                                @if((int)$item->status === 1)
+                                @if($item->is_perlu_pembaruan)
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                                        Perlu Pembaruan
+                                    </span>
+                                @elseif($item->is_pembaruan_menunggu_validasi)
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                        Pembaruan Ditinjau
+                                    </span>
+                                @elseif((int)$item->status === 1)
                                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
                                         <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         Menunggu Validasi
@@ -330,27 +367,49 @@
                                         </svg>
                                     </a>
 
-                                    <!-- Edit Button -->
-                                    <a href="{{ route('pertanyaan.edit', $item->id) }}" 
-                                       title="Edit Pertanyaan" 
-                                       class="p-2 text-gray-400 hover:text-[#741228] hover:bg-rose-50 rounded-xl transition">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </a>
-
-                                    <!-- Hapus Button (Form method delete) -->
-                                    <form action="{{ route('pertanyaan.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" 
-                                                title="Hapus Pertanyaan" 
-                                                class="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    @if($item->is_perlu_pembaruan)
+                                        <!-- Edit Terbuka Khusus Pembaruan Kebijakan -->
+                                        <a href="{{ route('pertanyaan.edit', $item->id) }}" 
+                                           title="Perbarui Jawaban Kebijakan Baru" 
+                                           class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition shadow-sm">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
-                                        </button>
-                                    </form>
+                                            <span>Perbarui</span>
+                                        </a>
+                                    @elseif($item->isLockedForDataEntry())
+                                        <!-- Terkunci Normal / Dalam Peninjauan -->
+                                        <span class="p-2 text-gray-300 cursor-not-allowed inline-flex items-center" 
+                                              title="{{ $item->is_pembaruan_menunggu_validasi ? 'Terkunci (Sedang dalam proses peninjauan validator)' : 'Terkunci (Pertanyaan sudah disetujui & tayang)' }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </span>
+                                    @else
+                                        <!-- Edit Normal (Draft atau Ditolak/Revisi) -->
+                                        <a href="{{ route('pertanyaan.edit', $item->id) }}" 
+                                           title="Edit Pertanyaan" 
+                                           class="p-2 text-gray-400 hover:text-[#741228] hover:bg-rose-50 rounded-xl transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </a>
+                                    @endif
+
+                                    <!-- Hapus Button: Sembunyikan jika Terkunci untuk Data Entry -->
+                                    @if(!$item->isLockedDeleteForDataEntry())
+                                        <form action="{{ route('pertanyaan.destroy', $item->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pertanyaan ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    title="Hapus Pertanyaan" 
+                                                    class="p-2 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
 
                                     <!-- Chevron / Arrow Link -->
                                     <a href="{{ route('pertanyaan.show', $item->id) }}" class="text-gray-300 hover:text-[#741228] p-1">

@@ -152,7 +152,17 @@
                             <p class="text-[11px] text-gray-400 capitalize">{{ str_replace('_', ' ', $item->user->role ?? 'User') }}</p>
                         </td>
                         <td class="py-4 px-6 text-center">
-                            @if((int)$item->status === \App\Models\Pertanyaan::DRAFT)
+                            @if($item->is_perlu_pembaruan)
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span>
+                                    Perlu Pembaruan
+                                </span>
+                            @elseif($item->is_pembaruan_menunggu_validasi)
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                    Pembaruan Ditinjau
+                                </span>
+                            @elseif((int)$item->status === \App\Models\Pertanyaan::DRAFT)
                                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-600 border border-gray-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
                                     Draft
@@ -181,6 +191,16 @@
                                    title="Lihat Detail & Riwayat Edit">
                                     Detail
                                 </a>
+
+                                @if((int)$item->status === 2 && !$item->status_pembaruan)
+                                    <button type="button" 
+                                            onclick="openModalMintaPembaruan({{ $item->id }})" 
+                                            class="px-2.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs font-bold text-amber-800 hover:bg-amber-100 transition cursor-pointer" 
+                                            title="Minta Pembaruan Kebijakan ke Data Entry">
+                                        Pembaruan
+                                    </button>
+                                @endif
+
                                 <a href="{{ route('superadmin.pertanyaan.edit', $item->id) }}" 
                                    class="px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition" 
                                    title="Ubah Pertanyaan">
@@ -237,5 +257,55 @@
 
     </div>
 
+    <!-- Modal Minta Pembaruan Kebijakan (Super Admin) -->
+    <div id="modalMintaPembaruan" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-gray-100 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    </div>
+                    <h3 class="text-base font-extrabold text-gray-900">Minta Pembaruan Kebijakan</h3>
+                </div>
+                <button type="button" onclick="closeModalMintaPembaruan()" class="text-gray-400 hover:text-gray-600 p-1 rounded-lg">✕</button>
+            </div>
+            <form id="formMintaPembaruan" action="" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label for="catatan_pembaruan" class="block text-xs font-bold text-gray-800 mb-1">
+                        Catatan Arahan Kebijakan Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <p class="text-[11px] text-gray-400 mb-2">Tuliskan instruksi atau poin kebijakan baru yang harus disesuaikan oleh Data Entry.</p>
+                    <textarea id="catatan_pembaruan" name="catatan_pembaruan" rows="4" required placeholder="Contoh: Perbarui jawaban sesuai SK Rektor No. 12/2026 mengenai perpanjangan masa pembayaran SPP..." class="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-800 focus:bg-white focus:outline-none focus:border-[#741228] transition leading-relaxed"></textarea>
+                </div>
+                <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 font-medium leading-relaxed">
+                    ⚠️ <strong>Informasi Alur:</strong> Notifikasi "Perlu Pembaruan" akan dikirimkan ke Data Entry dan tombol edit FAQ ini otomatis terbuka. Jawaban lama <u>tetap tayang</u> di halaman mahasiswa sampai jawaban baru disetujui.
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModalMintaPembaruan()" class="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#741228] hover:bg-[#5e0d1f] shadow-sm">Kirim ke Data Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    function openModalMintaPembaruan(id) {
+        const form = document.getElementById('formMintaPembaruan');
+        if (form) {
+            form.action = `/pertanyaan/${id}/minta-pembaruan`;
+        }
+        const m = document.getElementById('modalMintaPembaruan');
+        if (m) m.classList.remove('hidden');
+    }
+
+    function closeModalMintaPembaruan() {
+        const m = document.getElementById('modalMintaPembaruan');
+        if (m) m.classList.add('hidden');
+    }
+</script>
 @endsection
