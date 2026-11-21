@@ -34,13 +34,6 @@ class LoginController extends Controller
             'password' => 'required'
         ]);
 
-        // if (session()->has('user')) {
-        //     return back()->with(
-        //         'error',
-        //         'Anda sudah login. Silakan logout terlebih dahulu!'
-        //     );
-        // }
-
         $user = DB::table('users')
             ->where('email', $request->email)
             ->first();
@@ -64,14 +57,47 @@ class LoginController extends Controller
         );
     }
 
-        session([
-            'user' => [
+        // Periksa dan simpan session agar satu akun hanya bisa login di satu browser    
+        $berhasilLogin = DB::transaction(function () use ($request, $user) {
+
+            $akun = DB::table('users')
+                ->where('id', $user->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (
+                $akun->session_id !== null &&
+                $akun->session_id !== ''
+            ) {
+                return false;
+            }
+
+            $request->session()->regenerate();
+
+            DB::table('users')
+                ->where('id', $user->id)
+                ->update([
+                    'session_id' => $request->session()->getId()
+                ]);
+
+            $request->session()->put('user', [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role
-            ]
-        ]);
+            ]);
+
+            return true;
+        });
+
+        if (!$berhasilLogin) {
+            return back()
+                ->with(
+                    'error',
+                    'Akun ini sudah login di browser lain. Silakan logout terlebih dahulu.'
+                )
+                ->withInput($request->only('email'));
+        }
 
         if ($user->role === 'validator') {
             return redirect()->route('validator.index');
@@ -85,9 +111,26 @@ class LoginController extends Controller
         };
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->flush();
+        // Ambil ID pengguna dan session browser saat ini
+        $userId = $request->session()->get('user.id');
+        $sessionId = $request->session()->getId();
+
+        // Kosongkan session_id hanya jika cocok dengan browser ini
+        if ($userId) {
+            DB::table('users')
+                ->where('id', $userId)
+                ->where('session_id', $sessionId)
+                ->update([
+                    'session_id' => null
+                ]);
+        }
+
+        // Hapus session login
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect('/login');
     }
 }
